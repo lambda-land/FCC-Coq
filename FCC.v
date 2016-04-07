@@ -78,60 +78,13 @@ End Semantics.
 (** TODO: write comment *)
 Section Equivalence.
 
-(** Definition of equivalent formulas. *)
-Definition fequiv (f1 f2 : formula) : Prop :=
-  forall (c : config), (eval c f1) = (eval c f2).
-
 (** Definition of equivalent choice calculus expressions. *)
 Definition equiv (e1 e2 : cc) : Prop :=
   forall (c : config), (sem c e1) = (sem c e2).
 
-(** Flip the alternative selected for a dimension in a configuration. *)
-Definition fflip (d : dim) (c : config) : config :=
-  fun d' => if beq_nat d d' then negb (c d) else c d'.
-
-(** Flip operation for choice calculus expressions. *)
-Fixpoint flip (e : cc) : cc :=
-  match e with
-  | one n => one n
-  | chc f l r => chc (neg f) (flip r) (flip l)
-  end.
-
-(** Equivalence for formulas is reflexive. *)
-Lemma fequiv_reflexive : forall (f : formula),
-                         fequiv f f.
-Proof.
-  intro f.
-  unfold fequiv.
-  intro c.
-  reflexivity.
-Qed.
-
-(** Equivalence for formulas is symmetric. *)
-Lemma fequiv_symmetric : forall (f1 f2 : formula),
-                         fequiv f1 f2 -> fequiv f2 f1.
-Proof. Admitted. (* TODO: prove if needed *)
-
-(** Equivalence for formulas is transitive. *)
-Lemma fequiv_transitive : forall (f1 f2 f3 : formula),
-                          fequiv f1 f2 -> fequiv f2 f3 -> fequiv f1 f3.
-Proof. Admitted. (* TODO: prove if needed *)
-
-(** Negation is an involution. *)
-Lemma neg_involutive : forall (f : formula),
-                       fequiv f (neg (neg f)).
-Proof.
-  intro f.
-  unfold fequiv.
-  intro c.
-  simpl.
-  rewrite -> negb_involutive.
-  reflexivity.
-Qed.
-
 (** Equivalence for choice calculus expressions is reflexive. *)
-Lemma equiv_reflexive : forall (e : cc),
-                        equiv e e.
+Fact equiv_reflexive : forall (e : cc),
+                       equiv e e.
 Proof.
   intro e.
   unfold equiv.
@@ -140,45 +93,14 @@ Proof.
 Qed.
 
 (** Equivalence for choice calculus expressions is symmetric. *)
-Lemma equiv_symmetric : forall (e1 e2 : cc),
-                        equiv e1 e2 -> equiv e2 e1.
+Fact equiv_symmetric : forall (e1 e2 : cc),
+                       equiv e1 e2 -> equiv e2 e1.
 Proof. Admitted. (* TODO: prove if needed *)
 
 (** Equivalence for choice calculus expressions is transitive. *)
-Lemma equiv_transitive : forall (e1 e2 e3 : cc),
-                         equiv e1 e2 -> equiv e2 e3 -> equiv e1 e3.
+Fact equiv_transitive : forall (e1 e2 e3 : cc),
+                        equiv e1 e2 -> equiv e2 e3 -> equiv e1 e3.
 Proof. Admitted. (* TODO: prove if needed *)
-
-(** Replacing an formula with an equivalent one preserves the semantics of a
-    choice calculus expression. *)
-Lemma chc_fequiv_pres : forall (f1 f2 : formula) (l1 l2 r1 r2 : cc),
-                        fequiv f1 f2 -> equiv l1 l2 -> equiv r1 r2 ->
-                        equiv (chc f1 l1 r1) (chc f2 l2 r2).
-Proof.
-  intros f1 f2 l1 l2 r1 r2 Hf Hl Hr.
-  unfold equiv.
-  intro c.
-  simpl.
-  rewrite -> Hf.
-  rewrite -> Hl.
-  rewrite -> Hr.
-  reflexivity.
-Qed.
-
-(** The flip operation for choice calculus expressions is an involution. *)
-Lemma flip_involutive : forall (e : cc),
-                        equiv e (flip (flip e)).
-Proof.
-  intros e.
-  induction e as [n | f l IHl r IHr].
-  (* case: e = one n *)
-    simpl.
-    apply equiv_reflexive.
-  (* case: e = chc f l r *)
-    simpl.
-    apply chc_fequiv_pres;
-      [apply neg_involutive | apply IHl | apply IHr].
-Qed.
 
 (** Choice Idempotence. *)
 Theorem cc_idemp : forall (f : formula) (e : cc),
@@ -232,8 +154,114 @@ Theorem cc_swap_r : forall (f1 f2 : formula) (e1 e2 e3 : cc),
                           (chc f2 e1 (chc f1 e2 e3)).
 Proof. Admitted. (* TODO: write proof *)
 
+(** Definition of equivalent formulas. *)
+Definition fequiv (f1 f2 : formula) : Prop :=
+  forall (c : config), (eval c f1) = (eval c f2).
+
+(** Equivalence for formulas is reflexive. *)
+Fact fequiv_reflexive : forall (f : formula),
+                        fequiv f f.
+Proof.
+  intro f.
+  unfold fequiv.
+  intro c.
+  reflexivity.
+Qed.
+
+(** Equivalence for formulas is symmetric. *)
+Fact fequiv_symmetric : forall (f1 f2 : formula),
+                        fequiv f1 f2 -> fequiv f2 f1.
+Proof. Admitted. (* TODO: prove if needed *)
+
+(** Equivalence for formulas is transitive. *)
+Fact fequiv_transitive : forall (f1 f2 f3 : formula),
+                         fequiv f1 f2 -> fequiv f2 f3 -> fequiv f1 f3.
+Proof. Admitted. (* TODO: prove if needed *)
+
+(** Choices with equivalent formulas and alternatives are equivalent. *)
+Lemma chc_equiv : forall (f1 f2 : formula) (l1 l2 r1 r2 : cc),
+                  fequiv f1 f2 -> equiv l1 l2 -> equiv r1 r2 ->
+                  equiv (chc f1 l1 r1) (chc f2 l2 r2).
+Proof.
+  intros f1 f2 l1 l2 r1 r2 Hf Hl Hr.
+  unfold equiv.
+  intro c.
+  simpl.
+  rewrite -> Hf.
+  rewrite -> Hl.
+  rewrite -> Hr.
+  reflexivity.
+Qed.
+
+(** Flip the alternative selected for a dimension in a configuration. *)
+Definition fflip (d : dim) (c : config) : config :=
+  fun d' => if beq_nat d d' then negb (c d) else c d'.
+
+(** Flip operation for choice calculus expressions. *)
+Fixpoint flip (e : cc) : cc :=
+  match e with
+  | one n => one n
+  | chc f l r => chc (neg f) r l
+  end.
+
+(** Flip all operation for choice calculus expressions. *)
+Fixpoint flipall (e : cc) : cc :=
+  match e with
+  | one n => one n
+  | chc f l r => chc (neg f) (flipall r) (flipall l)
+  end.
+
+(** Negation is an involution. *)
+Lemma neg_involutive : forall (f : formula),
+                       fequiv f (neg (neg f)).
+Proof.
+  intro f.
+  unfold fequiv.
+  intro c.
+  simpl.
+  rewrite -> negb_involutive.
+  reflexivity.
+Qed.
+
+(** The flip all operation for choice calculus expressions is an involution. *)
+Lemma flipall_involutive : forall (e : cc),
+                           equiv e (flipall (flipall e)).
+Proof.
+  intros e.
+  induction e as [n | f l IHl r IHr].
+  (* case: e = one n *)
+    simpl.
+    apply equiv_reflexive.
+  (* case: e = chc f l r *)
+    simpl.
+    apply chc_equiv;
+      [apply neg_involutive | apply IHl | apply IHr].
+Qed.
+
+(** Join-Or rule. *)
+Theorem join_or : forall (f1 f2 : formula) (e1 e2 : cc),
+                  equiv (chc f1 e1 (chc f2 e1 e2)) (chc (join f1 f2) e1 e2).
+Proof. Admitted. (* TODO: write proof *)
+
+(** Join-And rule. *)
+Theorem join_and : forall (f1 f2 : formula) (e1 e2 : cc),
+                   equiv (chc f1 (chc f2 e1 e2) e2) (chc (meet f1 f2) e1 e2).
+Proof. Admitted. (* TODO: write proof *)
+
+(** Join-Or-Not rule. *)
+Theorem join_or_not : forall (f1 f2 : formula) (e1 e2 : cc),
+                      equiv (chc f1 e1 (chc f2 e2 e1))
+                            (chc (join f1 (neg f2)) e1 e2).
+Proof. Admitted. (* TODO: write proof *)
+
+(** Join-And-Not rule. *)
+Theorem join_and_not : forall (f1 f2 : formula) (e1 e2 : cc),
+                       equiv (chc f1 (chc f2 e2 e1) e2)
+                             (chc (meet f1 (neg f2)) e1 e2).
+Proof. Admitted. (* TODO: write proof *)
+
 (* TODO: add more theorems *)
 
 End Equivalence.
 
-End VP.
+End FCC.
