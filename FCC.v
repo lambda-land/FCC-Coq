@@ -75,7 +75,9 @@ Fixpoint sem (c : config) (e : cc) : nat :=
 End Semantics.
 
 (** ** Equivalence *)
-(** TODO: write comment *)
+(** Statement and proof of semantic equivalence laws from the TOSEM paper (for
+    formula choice calculus), the GPCE paper, and some new laws from my
+    thesis. *)
 Section Equivalence.
 
 (** Definition of equivalence for formula. *)
@@ -130,8 +132,10 @@ Remark equiv_trans : forall e1 e2 e3 : cc,
 Proof.
 Admitted. (* TODO: prove if needed *)
 
-Theorem chc_neg : forall (f : formula) (l r : cc),
-                  equiv (chc f l r) (chc (neg f) r l).
+(** Choice equivalence rule for complementry formulas and transposed
+    alternatives. *)
+Theorem trans : forall (f : formula) (l r : cc),
+                equiv (chc f l r) (chc (neg f) r l).
 Proof.
   unfold equiv.
   intros f l r c.
@@ -154,8 +158,7 @@ Proof.
   reflexivity.
 Qed.
 
-(** Choice Congruence for the case when equivalent choices appear in the left
-    alternative. *)
+(** Choice Congruence for equivalent left alternatives. *)
 Theorem chc_cong_l : forall (f : formula) (l l' r : cc),
                      equiv l l' ->
                      equiv (chc f l r) (chc f l' r).
@@ -168,13 +171,12 @@ Proof.
   reflexivity.
 Qed.
 
-(** Choice Congruence for the case when equivalent choices appear in the right
-    alternative. *)
+(** Choice Congruence for equivalent right alternatives. *)
 Corollary chc_cong_r : forall (f : formula) (l r r' : cc),
                        equiv r r' ->
                        equiv (chc f l r) (chc f l r').
 Proof.
-  (* TODO: rewrite using chc_neg, chc_cong_l, and equivalence rules. *)
+  (* TODO: rewrite using trans, chc_cong_l, and equivalence rules. *)
   intros f l r r' H.
   unfold equiv.
   intro c.
@@ -183,6 +185,7 @@ Proof.
   reflexivity.
 Qed.
 
+(** TODO: comment *)
 Corollary chc_cong : forall (f1 f2 : formula) (l1 l2 r1 r2 : cc),
                      fequiv f1 f2 -> equiv l1 l2 -> equiv r1 r2 ->
                      equiv (chc f1 l1 r1) (chc f2 l2 r2).
@@ -224,7 +227,7 @@ Proof.
     reflexivity.
 Qed.
 
-(** C-C-Merge for the case when the nested choice appears in the left
+(** C-C-Merge for the case where the nested choice appears in the left
     alternative. *)
 Theorem cc_merge_l : forall (f : formula) (e1 e2 e3 : cc),
                      equiv (chc f (chc f e1 e2) e3) (chc f e1 e3).
@@ -237,12 +240,12 @@ Proof.
     reflexivity.
 Qed.
 
-(** C-C-Merge for the case when the nested choice appears in the right
+(** C-C-Merge for the case where the nested choice appears in the right
     alternative. *)
 Corollary cc_merge_r : forall (f : formula) (e1 e2 e3 : cc), 
                        equiv (chc f e1 (chc f e2 e3)) (chc f e1 e3).
 Proof.
-  (* TODO: rewrite using chc_neg, cc_merge_l, and equivalence rules. *)
+  (* TODO: rewrite using trans, cc_merge_l, and equivalence rules. *)
   intros f e1 e2 e3.
   unfold equiv.
   intro c.
@@ -251,7 +254,7 @@ Proof.
     reflexivity.
 Qed.
 
-(** C-C-Swap for the case when the nested choice appears in the left
+(** C-C-Swap for the case where the nested choice appears in the left
     alternative of the simpler form. *)
 Theorem cc_swap_l : forall (f1 f2 : formula) (e1 e2 e3 : cc),
                     equiv (chc f1 (chc f2 e1 e3) (chc f2 e2 e3))
@@ -259,7 +262,7 @@ Theorem cc_swap_l : forall (f1 f2 : formula) (e1 e2 e3 : cc),
 Proof.
 Admitted. (* TODO: write proof *)
 
-(** C-C-Swap for the case when the nested choice appears in the right
+(** C-C-Swap for the case where the nested choice appears in the right
     alternative of the simpler form. *)
 Corollary cc_swap_r : forall (f1 f2 : formula) (e1 e2 e3 : cc),
                       equiv (chc f1 (chc f2 e1 e2) (chc f2 e1 e3))
@@ -276,7 +279,8 @@ Admitted. (* TODO: write proof *)
 (** Join-And rule. *)
 Theorem join_and : forall (f1 f2 : formula) (e1 e2 : cc),
                    equiv (chc f1 (chc f2 e1 e2) e2) (chc (meet f1 f2) e1 e2).
-Proof. Admitted. (* TODO: write proof *)
+Proof.
+Admitted. (* TODO: write proof *)
 
 (** Join-Or-Not rule. *)
 Corollary join_or_not : forall (f1 f2 : formula) (e1 e2 : cc),
@@ -295,7 +299,7 @@ Admitted. (* TODO: write proof *)
 End Equivalence.
 
 (** ** Examples *)
-(** Some addition properties of formula choice calculus. *)
+(** Examples of some additional properties of formula choice calculus. *)
 Section Examples.
 
 (** Flip operation for choice calculus expressions. *)
