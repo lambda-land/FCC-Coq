@@ -95,12 +95,14 @@ Qed.
 (** Equivalence for formulas is symmetric. *)
 Remark fequiv_symm : forall f1 f2 : formula,
                      fequiv f1 f2 -> fequiv f2 f1.
-Proof. Admitted. (* TODO: prove if needed *)
+Proof.
+Admitted. (* TODO: prove if needed *)
 
 (** Equivalence for formulas is transitive. *)
 Remark fequiv_trans : forall f1 f2 f3 : formula,
                       fequiv f1 f2 -> fequiv f2 f3 -> fequiv f1 f3.
-Proof. Admitted. (* TODO: prove if needed *)
+Proof.
+Admitted. (* TODO: prove if needed *)
 
 (** Definition of equivalence for choice calculus. *)
 Definition equiv (e1 e2 : cc) : Prop :=
@@ -119,12 +121,14 @@ Qed.
 (** Equivalence for choice calculus expressions is symmetric. *)
 Remark equiv_symm : forall e1 e2 : cc,
                     equiv e1 e2 -> equiv e2 e1.
-Proof. Admitted. (* TODO: prove if needed *)
+Proof.
+Admitted. (* TODO: prove if needed *)
 
 (** Equivalence for choice calculus expressions is transitive. *)
 Remark equiv_trans : forall e1 e2 e3 : cc,
                      equiv e1 e2 -> equiv e2 e3 -> equiv e1 e3.
-Proof. Admitted. (* TODO: prove if needed *)
+Proof.
+Admitted. (* TODO: prove if needed *)
 
 Theorem chc_neg : forall (f : formula) (l r : cc),
                   equiv (chc f l r) (chc (neg f) r l).
@@ -194,6 +198,20 @@ Proof.
   reflexivity.
 Qed.
 
+(** TODO: comment *)
+Theorem chc_top : forall (f : formula) (l r : cc),
+                  fequiv f top ->
+                  equiv (chc f l r) l.
+Proof.
+Admitted. (* TODO: write proof *)
+
+(** TODO: comment *)
+Theorem chc_bot : forall (f : formula) (l r : cc),
+                  fequiv f bot ->
+                  equiv (chc f l r) r.
+Proof.
+Admitted. (* TODO: write proof *)
+
 (** Choice Idempotence. *)
 Theorem cc_idemp : forall (f : formula) (e : cc),
                    equiv e (chc f e e).
@@ -238,19 +256,22 @@ Qed.
 Theorem cc_swap_l : forall (f1 f2 : formula) (e1 e2 e3 : cc),
                     equiv (chc f1 (chc f2 e1 e3) (chc f2 e2 e3))
                           (chc f2 (chc f1 e1 e2) e3).
-Proof. Admitted. (* TODO: write proof *)
+Proof.
+Admitted. (* TODO: write proof *)
 
 (** C-C-Swap for the case when the nested choice appears in the right
     alternative of the simpler form. *)
 Corollary cc_swap_r : forall (f1 f2 : formula) (e1 e2 e3 : cc),
                       equiv (chc f1 (chc f2 e1 e2) (chc f2 e1 e3))
                             (chc f2 e1 (chc f1 e2 e3)).
-Proof. Admitted. (* TODO: write proof *)
+Proof.
+Admitted. (* TODO: write proof *)
 
 (** Join-Or rule. *)
 Theorem join_or : forall (f1 f2 : formula) (e1 e2 : cc),
                   equiv (chc f1 e1 (chc f2 e1 e2)) (chc (join f1 f2) e1 e2).
-Proof. Admitted. (* TODO: write proof *)
+Proof.
+Admitted. (* TODO: write proof *)
 
 (** Join-And rule. *)
 Theorem join_and : forall (f1 f2 : formula) (e1 e2 : cc),
@@ -258,19 +279,18 @@ Theorem join_and : forall (f1 f2 : formula) (e1 e2 : cc),
 Proof. Admitted. (* TODO: write proof *)
 
 (** Join-Or-Not rule. *)
-Theorem join_or_not : forall (f1 f2 : formula) (e1 e2 : cc),
-                      equiv (chc f1 e1 (chc f2 e2 e1))
-                            (chc (join f1 (neg f2)) e1 e2).
+Corollary join_or_not : forall (f1 f2 : formula) (e1 e2 : cc),
+                        equiv (chc f1 e1 (chc f2 e2 e1))
+                              (chc (join f1 (neg f2)) e1 e2).
 Proof.
-  intros f1 f2 e1 e2.
-  assert (H : equiv (chc f2 e2 e1) (chc (neg f2) e1 e2)).
 Admitted. (* TODO: write proof *)
 
 (** Join-And-Not rule. *)
-Theorem join_and_not : forall (f1 f2 : formula) (e1 e2 : cc),
-                       equiv (chc f1 (chc f2 e2 e1) e2)
-                             (chc (meet f1 (neg f2)) e1 e2).
-Proof. Admitted. (* TODO: write proof *)
+Corollary join_and_not : forall (f1 f2 : formula) (e1 e2 : cc),
+                         equiv (chc f1 (chc f2 e2 e1) e2)
+                               (chc (meet f1 (neg f2)) e1 e2).
+Proof.
+Admitted. (* TODO: write proof *)
 
 End Equivalence.
 
