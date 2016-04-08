@@ -170,7 +170,7 @@ Corollary chc_cong_r : forall (f : formula) (l r r' : cc),
                        equiv r r' ->
                        equiv (chc f l r) (chc f l r').
 Proof.
-  (* TODO: rewrite using chc_neg and equivalence relation rules. *)
+  (* TODO: rewrite using chc_neg, chc_cong_l, and equivalence rules. *)
   intros f l r r' H.
   unfold equiv.
   intro c.
@@ -183,6 +183,7 @@ Corollary chc_cong : forall (f1 f2 : formula) (l1 l2 r1 r2 : cc),
                      fequiv f1 f2 -> equiv l1 l2 -> equiv r1 r2 ->
                      equiv (chc f1 l1 r1) (chc f2 l2 r2).
 Proof.
+  (* TODO: rewrite using chc_cong_f, chc_cong_l, and chc_cong_r *)
   intros f1 f2 l1 l2 r1 r2 Hf Hl Hr.
   unfold equiv.
   intro c.
@@ -223,7 +224,7 @@ Qed.
 Corollary cc_merge_r : forall (f : formula) (e1 e2 e3 : cc), 
                        equiv (chc f e1 (chc f e2 e3)) (chc f e1 e3).
 Proof.
-  (* TODO: rewrite using chc_neg and equivalence relation rules. *)
+  (* TODO: rewrite using chc_neg, cc_merge_l, and equivalence rules. *)
   intros f e1 e2 e3.
   unfold equiv.
   intro c.
@@ -271,7 +272,11 @@ Theorem join_and_not : forall (f1 f2 : formula) (e1 e2 : cc),
                              (chc (meet f1 (neg f2)) e1 e2).
 Proof. Admitted. (* TODO: write proof *)
 
-(* Some more examples *)
+End Equivalence.
+
+(** ** Examples *)
+(** Some addition properties of formula choice calculus. *)
+Section Examples.
 
 (** Flip operation for choice calculus expressions. *)
 Fixpoint flip (e : cc) : cc :=
@@ -307,6 +312,6 @@ Proof.
       [apply neg_involutive | apply IHl | apply IHr].
 Qed.
 
-End Equivalence.
+End Examples.
 
 End FCC.
