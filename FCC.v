@@ -40,16 +40,16 @@ Inductive tree : Type :=
   | t_leaf : nat -> tree
   | t_node : nat -> tree -> tree -> tree.
 
-(** Choice calculus syntax. *)
-Inductive cc : Type :=
+(** Formula choice calculus syntax. *)
+Inductive fcc : Type :=
   (* TODO: replace one with node and leaf *)
-  | one : nat -> cc
-  | chc : formula -> cc -> cc -> cc.
+  | one : nat -> fcc
+  | chc : formula -> fcc -> fcc -> fcc.
 
 End Syntax.
 
 (** ** Semantics *)
-(** The semantics of a choice calculus expression is a function from
+(** The semantics of a formula choice calculus expression is a function from
     selections/configuration to plain binary trees. A selection is a (total)
     function from a dimension name to the tag to select. *)
 Section Semantics.
@@ -65,8 +65,8 @@ Fixpoint eval (c : config) (f : formula) : tag :=
   | join f1 f2 => (eval c f1) || (eval c f2)
   end.
 
-(** Choice calculus semantics. *)
-Fixpoint sem (c : config) (e : cc) : nat :=
+(** Formula choice calculus semantics. *)
+Fixpoint sem (c : config) (e : fcc) : nat :=
   match e with
   | one n     => n
   | chc f l r => if eval c f then sem c l else sem c r
@@ -75,124 +75,172 @@ Fixpoint sem (c : config) (e : cc) : nat :=
 End Semantics.
 
 (** ** Equivalence *)
-(** Statement and proof of semantic equivalence laws from the TOSEM paper (for
-    formula choice calculus), the GPCE paper, and some new laws from my
-    thesis. *)
+(** Statement and proof of semantic equivalence rules from the TOSEM paper (for
+    formula choice calculus), the GPCE paper, and some additional rules. *)
 Section Equivalence.
 
 (** Definition of equivalence for formula. *)
-Definition fequiv (f1 f2 : formula) : Prop :=
+Definition f_equiv (f1 f2 : formula) : Prop :=
   forall (c : config), (eval c f1) = (eval c f2).
 
 (** Equivalence for formulas is reflexive. *)
-Remark fequiv_refl : forall f : formula,
-                     fequiv f f.
+Remark f_equiv_refl : forall f : formula,
+                      f_equiv f f.
 Proof.
-  intro f.
-  unfold fequiv.
-  intro c.
+  unfold f_equiv.
+  intros f c.
   reflexivity.
 Qed.
 
 (** Equivalence for formulas is symmetric. *)
-Remark fequiv_symm : forall f1 f2 : formula,
-                     fequiv f1 f2 -> fequiv f2 f1.
+Remark f_equiv_symm : forall f1 f2 : formula,
+                      f_equiv f1 f2 -> f_equiv f2 f1.
 Proof.
-Admitted. (* TODO: prove if needed *)
+  intros f1 f2 H.
+  unfold f_equiv in H.
+  unfold f_equiv.
+  intro c.
+  symmetry.
+  apply H.
+Qed.
 
 (** Equivalence for formulas is transitive. *)
-Remark fequiv_trans : forall f1 f2 f3 : formula,
-                      fequiv f1 f2 -> fequiv f2 f3 -> fequiv f1 f3.
+Remark f_equiv_trans : forall f1 f2 f3 : formula,
+                       f_equiv f1 f2 -> f_equiv f2 f3 -> f_equiv f1 f3.
 Proof.
-Admitted. (* TODO: prove if needed *)
+  intros f1 f2 f3 H1 H2.
+  unfold f_equiv in H1.
+  unfold f_equiv in H2.
+  unfold f_equiv.
+  intro c.
+  transitivity (eval c f2).
+    apply H1.
+    apply H2.
+Qed.
 
-(** Definition of equivalence for choice calculus. *)
-Definition equiv (e1 e2 : cc) : Prop :=
+(** Definition of equivalence for formula choice calculus. *)
+Definition fcc_equiv (e1 e2 : fcc) : Prop :=
   forall (c : config), (sem c e1) = (sem c e2).
 
-(** Equivalence for choice calculus expressions is reflexive. *)
-Remark equiv_refl : forall e : cc,
-                    equiv e e.
+(** Equivalence for formula choice calculus expressions is reflexive. *)
+Remark fcc_equiv_refl : forall e : fcc,
+                        fcc_equiv e e.
 Proof.
-  intro e.
-  unfold equiv.
-  intro c.
+  unfold fcc_equiv.
+  intros e c.
   reflexivity.
 Qed.
 
-(** Equivalence for choice calculus expressions is symmetric. *)
-Remark equiv_symm : forall e1 e2 : cc,
-                    equiv e1 e2 -> equiv e2 e1.
+(** Equivalence for formula choice calculus expressions is symmetric. *)
+Remark fcc_equiv_symm : forall e1 e2 : fcc,
+                        fcc_equiv e1 e2 -> fcc_equiv e2 e1.
 Proof.
-Admitted. (* TODO: prove if needed *)
+  intros e1 e2 H.
+  unfold fcc_equiv in H.
+  unfold fcc_equiv.
+  intro c.
+  symmetry.
+  apply H.
+Qed.
 
-(** Equivalence for choice calculus expressions is transitive. *)
-Remark equiv_trans : forall e1 e2 e3 : cc,
-                     equiv e1 e2 -> equiv e2 e3 -> equiv e1 e3.
+(** Equivalence for formula choice calculus expressions is transitive. *)
+Remark fcc_equiv_trans : forall e1 e2 e3 : fcc,
+                         fcc_equiv e1 e2 -> fcc_equiv e2 e3 -> fcc_equiv e1 e3.
 Proof.
-Admitted. (* TODO: prove if needed *)
+  intros e1 e2 e3 H1 H2.
+  unfold fcc_equiv in H1.
+  unfold fcc_equiv in H2.
+  unfold fcc_equiv.
+  intro c.
+  transitivity (sem c e2).
+    apply H1.
+    apply H2.
+Qed.
 
-(** Choice equivalence rule for complementry formulas and transposed
-    alternatives. *)
-Theorem trans : forall (f : formula) (l r : cc),
-                equiv (chc f l r) (chc (neg f) r l).
+(** Choice-Transposition rule. *)
+Theorem chc_trans : forall (f : formula) (l r : fcc),
+                    fcc_equiv (chc f l r) (chc (neg f) r l).
 Proof.
-  unfold equiv.
+  unfold fcc_equiv.
   intros f l r c.
   destruct (eval c f) eqn:H;
-  simpl;
-  rewrite -> H;
-  reflexivity.
+    simpl;
+    rewrite -> H;
+    reflexivity.
 Qed.
 
-(** Choice congruence rule for equivalent formulas. *)
-Theorem chc_cong_f : forall (f f' : formula) (l r : cc),
-                     fequiv f f' ->
-                     equiv (chc f l r) (chc f' l r).
+(** Choice-Congruence rule for formulas. *)
+Theorem f_cong : forall (f f' : formula) (l r : fcc),
+                 f_equiv f f' ->
+                 fcc_equiv (chc f l r) (chc f' l r).
 Proof.
   intros f f' l r H.
-  unfold equiv.
+  unfold fcc_equiv.
   intro c.
   simpl.
   rewrite -> H.
   reflexivity.
 Qed.
 
-(** Choice Congruence for equivalent left alternatives. *)
-Theorem chc_cong_l : forall (f : formula) (l l' r : cc),
-                     equiv l l' ->
-                     equiv (chc f l r) (chc f l' r).
+(** Choice-Congruence rule for left alternatives. *)
+Theorem chc_l_cong : forall (f : formula) (l l' r : fcc),
+                     fcc_equiv l l' ->
+                     fcc_equiv (chc f l r) (chc f l' r).
 Proof.
   intros f l l' r H.
-  unfold equiv.
+  unfold fcc_equiv.
   intro c.
   simpl.
   rewrite -> H.
   reflexivity.
 Qed.
 
-(** Choice Congruence for equivalent right alternatives. *)
-Corollary chc_cong_r : forall (f : formula) (l r r' : cc),
-                       equiv r r' ->
-                       equiv (chc f l r) (chc f l r').
+(** Choice-Congruence rule for right alternatives. *)
+Corollary chc_r_cong : forall (f : formula) (l r r' : fcc),
+                       fcc_equiv r r' ->
+                       fcc_equiv (chc f l r) (chc f l r').
 Proof.
-  (* TODO: rewrite using trans, chc_cong_l, and equivalence rules. *)
+  (* The commented proof below uses symmetric reasoning as in the proof for
+     chc_l_cong. The uncommented proof avoids this repetition and should be
+     simpler than the commented proof.
+     
+     TODO: use setoid to make the uncommented proof shorter *)
+  (*
   intros f l r r' H.
-  unfold equiv.
+  unfold fcc_equiv.
   intro c.
   simpl.
   rewrite -> H.
   reflexivity.
+  *)
+  intros f l r r' H.
+  assert (C1 : fcc_equiv (chc f l r) (chc (neg f) r l)).
+    apply chc_trans.
+  assert (C2 : fcc_equiv (chc (neg f) r l) (chc (neg f) r' l)).
+    apply chc_l_cong.
+    apply H.
+  assert (C3 : fcc_equiv (chc f l r) (chc (neg f) r' l)).
+    apply fcc_equiv_trans with (e2 := chc (neg f) r l).
+    apply C1.
+    apply C2.
+  assert (C4 : fcc_equiv (chc f l r') (chc (neg f) r' l)).
+    apply chc_trans.
+  assert (C5 : fcc_equiv (chc (neg f) r' l) (chc f l r')).
+    apply fcc_equiv_symm.
+    apply C4.
+  apply fcc_equiv_trans with (e2 := chc (neg f) r' l).
+    apply C3.
+    apply C5.
 Qed.
 
 (** TODO: comment *)
-Corollary chc_cong : forall (f1 f2 : formula) (l1 l2 r1 r2 : cc),
-                     fequiv f1 f2 -> equiv l1 l2 -> equiv r1 r2 ->
-                     equiv (chc f1 l1 r1) (chc f2 l2 r2).
+Corollary chc_cong : forall (f1 f2 : formula) (l1 l2 r1 r2 : fcc),
+                     f_equiv f1 f2 -> fcc_equiv l1 l2 -> fcc_equiv r1 r2 ->
+                     fcc_equiv (chc f1 l1 r1) (chc f2 l2 r2).
 Proof.
-  (* TODO: rewrite using chc_cong_f, chc_cong_l, and chc_cong_r *)
+  (* TODO: rewrite using f_cong, chc_l_cong, and chc_r_cong *)
   intros f1 f2 l1 l2 r1 r2 Hf Hl Hr.
-  unfold equiv.
+  unfold fcc_equiv.
   intro c.
   simpl.
   rewrite -> Hf.
@@ -201,26 +249,68 @@ Proof.
   reflexivity.
 Qed.
 
-(** TODO: comment *)
-Theorem chc_top : forall (f : formula) (l r : cc),
-                  fequiv f top ->
-                  equiv (chc f l r) l.
+(** TODO: comment and rewrite without hypothesis *)
+Theorem f_top : forall (f : formula) (l r : fcc),
+                f_equiv f top ->
+                fcc_equiv (chc f l r) l.
+Proof.
+  intros f l r H.
+  unfold f_equiv in H.
+  unfold fcc_equiv.
+  intro c.
+  simpl.
+  rewrite -> H.
+  reflexivity.
+Qed.
+
+(** TODO: comment and rewrite without hypothesis *)
+Theorem f_bot : forall (f : formula) (l r : fcc),
+                f_equiv f bot ->
+                fcc_equiv (chc f l r) r.
+Proof.
+  intros f l r H.
+  unfold f_equiv in H.
+  unfold fcc_equiv.
+  intro c.
+  simpl.
+  rewrite -> H.
+  reflexivity.
+Qed.
+
+(** Formula-Join rule. *)
+Theorem join_or : forall (f1 f2 : formula) (e1 e2 : fcc),
+                  fcc_equiv (chc f1 e1 (chc f2 e1 e2))
+                            (chc (join f1 f2) e1 e2).
 Proof.
 Admitted. (* TODO: write proof *)
 
-(** TODO: comment *)
-Theorem chc_bot : forall (f : formula) (l r : cc),
-                  fequiv f bot ->
-                  equiv (chc f l r) r.
+(** Formula-Meet rule. *)
+Theorem join_and : forall (f1 f2 : formula) (e1 e2 : fcc),
+                   fcc_equiv (chc f1 (chc f2 e1 e2) e2)
+                             (chc (meet f1 f2) e1 e2).
+Proof.
+Admitted. (* TODO: write proof *)
+
+(** Formula-Join-Not rule. *)
+Corollary join_or_not : forall (f1 f2 : formula) (e1 e2 : fcc),
+                        fcc_equiv (chc f1 e1 (chc f2 e2 e1))
+                                  (chc (join f1 (neg f2)) e1 e2).
+Proof.
+Admitted. (* TODO: write proof *)
+
+(** Formula-Meet-Not rule. *)
+Corollary join_and_not : forall (f1 f2 : formula) (e1 e2 : fcc),
+                         fcc_equiv (chc f1 (chc f2 e2 e1) e2)
+                                   (chc (meet f1 (neg f2)) e1 e2).
 Proof.
 Admitted. (* TODO: write proof *)
 
 (** Choice Idempotence. *)
-Theorem cc_idemp : forall (f : formula) (e : cc),
-                   equiv e (chc f e e).
+Theorem chc_idemp : forall (f : formula) (e : fcc),
+                    fcc_equiv e (chc f e e).
 Proof.
   intros f e.
-  unfold equiv.
+  unfold fcc_equiv.
   intro c.
   simpl.
   destruct (eval c f);
@@ -229,11 +319,11 @@ Qed.
 
 (** C-C-Merge for the case where the nested choice appears in the left
     alternative. *)
-Theorem cc_merge_l : forall (f : formula) (e1 e2 e3 : cc),
-                     equiv (chc f (chc f e1 e2) e3) (chc f e1 e3).
+Theorem cc_merge_l : forall (f : formula) (e1 e2 e3 : fcc),
+                     fcc_equiv (chc f (chc f e1 e2) e3) (chc f e1 e3).
 Proof.
   intros f e1 e2 e3.
-  unfold equiv.
+  unfold fcc_equiv.
   intro c.
   simpl.
   destruct (eval c f);
@@ -242,57 +332,38 @@ Qed.
 
 (** C-C-Merge for the case where the nested choice appears in the right
     alternative. *)
-Corollary cc_merge_r : forall (f : formula) (e1 e2 e3 : cc), 
-                       equiv (chc f e1 (chc f e2 e3)) (chc f e1 e3).
+Corollary cc_merge_r : forall (f : formula) (e1 e2 e3 : fcc), 
+                       fcc_equiv (chc f e1 (chc f e2 e3)) (chc f e1 e3).
 Proof.
-  (* TODO: rewrite using trans, cc_merge_l, and equivalence rules. *)
+  (* TODO: rewrite using chc_trans, cc_merge_l, and equivalence rules. *)
   intros f e1 e2 e3.
-  unfold equiv.
+  unfold fcc_equiv.
   intro c.
   simpl.
   destruct (eval c f);
     reflexivity.
 Qed.
 
+(** C-C-Swap. *)
+Theorem cc_swap : forall (f1 f2 : formula) (e1 e2 e3 e4 : fcc),
+                  fcc_equiv (chc f1 (chc f2 e1 e2) (chc f2 e3 e4))
+                            (chc f2 (chc f1 e1 e3) (chc f2 e2 e4)).
+Proof.
+Admitted. (* TODO: write proof *)
+
 (** C-C-Swap for the case where the nested choice appears in the left
     alternative of the simpler form. *)
-Theorem cc_swap_l : forall (f1 f2 : formula) (e1 e2 e3 : cc),
-                    equiv (chc f1 (chc f2 e1 e3) (chc f2 e2 e3))
-                          (chc f2 (chc f1 e1 e2) e3).
+Theorem cc_swap_l : forall (f1 f2 : formula) (e1 e2 e3 : fcc),
+                    fcc_equiv (chc f1 (chc f2 e1 e3) (chc f2 e2 e3))
+                              (chc f2 (chc f1 e1 e2) e3).
 Proof.
 Admitted. (* TODO: write proof *)
 
 (** C-C-Swap for the case where the nested choice appears in the right
     alternative of the simpler form. *)
-Corollary cc_swap_r : forall (f1 f2 : formula) (e1 e2 e3 : cc),
-                      equiv (chc f1 (chc f2 e1 e2) (chc f2 e1 e3))
-                            (chc f2 e1 (chc f1 e2 e3)).
-Proof.
-Admitted. (* TODO: write proof *)
-
-(** Join-Or rule. *)
-Theorem join_or : forall (f1 f2 : formula) (e1 e2 : cc),
-                  equiv (chc f1 e1 (chc f2 e1 e2)) (chc (join f1 f2) e1 e2).
-Proof.
-Admitted. (* TODO: write proof *)
-
-(** Join-And rule. *)
-Theorem join_and : forall (f1 f2 : formula) (e1 e2 : cc),
-                   equiv (chc f1 (chc f2 e1 e2) e2) (chc (meet f1 f2) e1 e2).
-Proof.
-Admitted. (* TODO: write proof *)
-
-(** Join-Or-Not rule. *)
-Corollary join_or_not : forall (f1 f2 : formula) (e1 e2 : cc),
-                        equiv (chc f1 e1 (chc f2 e2 e1))
-                              (chc (join f1 (neg f2)) e1 e2).
-Proof.
-Admitted. (* TODO: write proof *)
-
-(** Join-And-Not rule. *)
-Corollary join_and_not : forall (f1 f2 : formula) (e1 e2 : cc),
-                         equiv (chc f1 (chc f2 e2 e1) e2)
-                               (chc (meet f1 (neg f2)) e1 e2).
+Corollary cc_swap_r : forall (f1 f2 : formula) (e1 e2 e3 : fcc),
+                      fcc_equiv (chc f1 (chc f2 e1 e2) (chc f2 e1 e3))
+                                (chc f2 e1 (chc f1 e2 e3)).
 Proof.
 Admitted. (* TODO: write proof *)
 
@@ -302,38 +373,39 @@ End Equivalence.
 (** Examples of some additional properties of formula choice calculus. *)
 Section Examples.
 
-(** Flip operation for choice calculus expressions. *)
-Fixpoint flip (e : cc) : cc :=
+(** Flip operation for formula choice calculus expressions. *)
+Fixpoint flip (e : fcc) : fcc :=
   match e with
   | one n => one n
   | chc f l r => chc (neg f) (flip r) (flip l)
   end.
 
 (** Negation is an involution. *)
-Example neg_involutive : forall f : formula,
-                         fequiv f (neg (neg f)).
+Example neg_invo : forall f : formula,
+                   f_equiv f (neg (neg f)).
 Proof.
   intro f.
-  unfold fequiv.
+  unfold f_equiv.
   intro c.
   simpl.
   rewrite -> negb_involutive.
   reflexivity.
 Qed.
 
-(** The flip operation for choice calculus expressions is an involution. *)
-Example flip_involutive : forall e : cc,
-                          equiv e (flip (flip e)).
+(** The flip operation for formula choice calculus expressions is an
+    involution. *)
+Example flip_invo : forall e : fcc,
+                    fcc_equiv e (flip (flip e)).
 Proof.
   intros e.
   induction e as [n | f l IHl r IHr].
   (* case: e = one n *)
     simpl.
-    apply equiv_refl.
+    apply fcc_equiv_refl.
   (* case: e = chc f l r *)
     simpl.
     apply chc_cong;
-      [apply neg_involutive | apply IHl | apply IHr].
+      [apply neg_invo | apply IHl | apply IHr].
 Qed.
 
 End Examples.
