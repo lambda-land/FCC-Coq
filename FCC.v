@@ -93,7 +93,7 @@ Proof.
 Qed.
 
 (** Equivalence for formulas is symmetric. *)
-Remark f_equiv_symm : forall f1 f2 : formula,
+Remark f_equiv_sym : forall f1 f2 : formula,
                       f_equiv f1 f2 ->
                       f_equiv f2 f1.
 Proof.
@@ -134,7 +134,7 @@ Proof.
 Qed.
 
 (** Equivalence for formula choice calculus expressions is symmetric. *)
-Remark fcc_equiv_symm : forall e1 e2 : fcc,
+Remark fcc_equiv_sym : forall e1 e2 : fcc,
                         fcc_equiv e1 e2 ->
                         fcc_equiv e2 e1.
 Proof.
@@ -226,7 +226,7 @@ Proof.
   assert (C4 : fcc_equiv (chc f l r') (chc (neg f) r' l)).
     apply chc_trans.
   assert (C5 : fcc_equiv (chc (neg f) r' l) (chc f l r')).
-    apply fcc_equiv_symm.
+    apply fcc_equiv_sym.
     apply C4.
   apply fcc_equiv_trans with (e2 := chc (neg f) r' l).
     apply C3.
@@ -359,6 +359,7 @@ Theorem cc_swap_l : forall (f1 f2 : formula) (e1 e2 e3 : fcc),
                     fcc_equiv (chc f1 (chc f2 e1 e3) (chc f2 e2 e3))
                               (chc f2 (chc f1 e1 e2) e3).
 Proof.
+  (* TODO: use setoid to make the uncommented proof shorter *)
   (*
   unfold fcc_equiv.
   intros f1 f2 e1 e2 e3 c.
