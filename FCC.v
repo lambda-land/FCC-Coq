@@ -60,10 +60,10 @@ Inductive fcc : Type :=
 (** Formula semantics. *)
 Fixpoint eval (f : formula) (c : config) : tag :=
   match f with
-  | top       => L
-  | bot       => R
-  | ref d     => c d
-  | ~ f     => negb (eval f c)
+  | top      => L
+  | bot      => R
+  | ref d    => c d
+  | ~ f      => negb (eval f c)
   | f1 \/ f2 => (eval f1 c) || (eval f2 c)
   | f1 /\ f2 => (eval f1 c) && (eval f2 c)
   end.
@@ -189,7 +189,8 @@ Proof.
   reflexivity.
 Qed.
 
-(** Choice-R-Congruence rule for right alternatives. *)
+(** Choice-R-Congruence rule for right alternatives. Notice that we do not
+    unfold the definition of [fcc_equiv] in the proof. *)
 Theorem chc_r_cong : forall (f : formula) (l r r' : fcc),
                      r =fcc= r' ->
                      chc f l r =fcc= chc f l r'.
@@ -207,7 +208,7 @@ Proof.
   reflexivity.
 Qed.
 
-(* Formula-Top rule. *)
+(** Formula-Top rule. *)
 Theorem f_top : forall (l r : fcc),
                 chc top l r =fcc= l.
 Proof.
@@ -215,7 +216,8 @@ Proof.
   reflexivity.
 Qed.
 
-(* Formula-Bottom rule. *)
+(** Formula-Bottom rule. Notice that we do not unfold the definition of
+    [fcc_equiv] in the proof. *)
 Theorem f_bot : forall (l r : fcc),
                 chc bot l r =fcc= r.
 Proof.
@@ -257,7 +259,7 @@ Proof.
   intros f1 f2 l r.
 Admitted. (* TODO: write proof *)
 
-(** Formula-Meet-Not rewrite rule. *)
+(** Formula-Meet-Not rule. *)
 Theorem f_meet_not : forall (f1 f2 : formula) (l r : fcc),
                      chc f1 (chc f2 r l) l =fcc= chc (f1 /\ ~ f2) r l.
 Proof.
@@ -310,7 +312,8 @@ Proof.
 Qed.
 
 (** C-C-Swap rule for the case where the nested choice appears in the left
-    alternative of the simpler form. *)
+    alternative of the simpler form. Notice that we do not unfold the
+    definition of [fcc_equiv] in the proof. *)
 Theorem cc_swap_l : forall (f1 f2 : formula) (e1 e2 e3 : fcc),
                     chc f1 (chc f2 e1 e3) (chc f2 e2 e3) =fcc=
                     chc f2 (chc f1 e1 e2) e3.
@@ -322,7 +325,8 @@ Proof.
 Qed.
 
 (** C-C-Swap rule for the case where the nested choice appears in the right
-    alternative of the simpler form. *)
+    alternative of the simpler form. Notice that we do not unfold the
+    definition of [fcc_equiv] in the proof. *)
 Theorem cc_swap_r : forall (f1 f2 : formula) (e1 e2 e3 : fcc),
                     chc f1 (chc f2 e1 e2) (chc f2 e1 e3) =fcc=
                     chc f2 e1 (chc f1 e2 e3).
