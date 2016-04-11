@@ -31,8 +31,11 @@ Inductive formula : Type :=
   | bot  : formula
   | ref  : dim -> formula
   | neg  : formula -> formula
-  | meet : formula -> formula -> formula
-  | join : formula -> formula -> formula.
+  | join : formula -> formula -> formula
+  | meet : formula -> formula -> formula.
+
+Infix "|||" := join.
+Infix "&&&" := meet.
 
 (* Object language syntax. *)
 Inductive tree : Type :=
@@ -54,12 +57,12 @@ Inductive fcc : Type :=
 (** Formula semantics. *)
 Fixpoint eval (f : formula) (c : config) : tag :=
   match f with
-  | top        => L
-  | bot        => R
-  | ref d      => c d
-  | neg f      => negb (eval f c)
-  | meet f1 f2 => (eval f1 c) && (eval f2 c)
-  | join f1 f2 => (eval f1 c) || (eval f2 c)
+  | top       => L
+  | bot       => R
+  | ref d     => c d
+  | neg f     => negb (eval f c)
+  | f1 ||| f2 => (eval f1 c) || (eval f2 c)
+  | f1 &&& f2 => (eval f1 c) && (eval f2 c)
   end.
 
 (** Formula choice calculus semantics. *)
@@ -148,9 +151,9 @@ Proof.
     [apply fcc_equiv_refl | apply fcc_equiv_sym | apply fcc_equiv_trans].
 Qed.
 
-(* TODO: make f-cong, chc-l-cong, and chc-r-cong instance of Proper typeclass. *)
+(* TODO: make choice congruence rules instances of Proper typeclass. *)
 
-(** Choice transposition rule. *)
+(** Choice-Transposition rule. *)
 Theorem chc_trans : forall (f : formula) (l r : fcc),
                     chc f l r =fcc= chc (neg f) r l.
 Proof.
@@ -161,8 +164,8 @@ Proof.
     reflexivity.
 Qed.
 
-(** Choice congruence rule for formulas. *)
-Theorem f_cong : forall (f f' : formula) (l r : fcc),
+(** Choice-F-Congruence rule for formulas. *)
+Theorem chc_f_cong : forall (f f' : formula) (l r : fcc),
                  f =f= f' ->
                  chc f l r =fcc= chc f' l r.
 Proof.
@@ -172,7 +175,7 @@ Proof.
   reflexivity.
 Qed.
 
-(** Choice congruence rule for left alternatives. *)
+(** Choice-L-Congruence rule for left alternatives. *)
 Theorem chc_l_cong : forall (f : formula) (l l' r : fcc),
                      l =fcc= l' ->
                      chc f l r =fcc= chc f l' r.
@@ -183,7 +186,7 @@ Proof.
   reflexivity.
 Qed.
 
-(** Choice congruence rule for right alternatives. *)
+(** Choice-R-Congruence rule for right alternatives. *)
 Theorem chc_r_cong : forall (f : formula) (l r r' : fcc),
                      r =fcc= r' ->
                      chc f l r =fcc= chc f l r'.
@@ -219,25 +222,25 @@ Proof.
   *)
   intros l r.
   rewrite -> chc_trans.
-  rewrite -> f_cong with (f' := top);
+  rewrite -> chc_f_cong with (f' := top);
     [apply f_top | intro c; reflexivity].
 Qed.
 
 (** Formula-Join rule. *)
-Theorem f_join : forall (f1 f2 : formula) (e1 e2 : fcc),
-                 chc f1 e1 (chc f2 e1 e2) =fcc= chc (join f1 f2) e1 e2.
+Theorem f_join : forall (f1 f2 : formula) (l r : fcc),
+                 chc f1 l (chc f2 l r) =fcc= chc (f1 ||| f2) l r.
 Proof.
-  intros f1 f2 e1 e2 c.
+  intros f1 f2 l r c.
   simpl.
   destruct (eval f1 c);
     reflexivity.
 Qed.
 
 (** Formula-Meet rule. *)
-Theorem f_meet : forall (f1 f2 : formula) (e1 e2 : fcc),
-                 chc f1 (chc f2 e1 e2) e2 =fcc= chc (meet f1 f2) e1 e2.
+Theorem f_meet : forall (f1 f2 : formula) (l r : fcc),
+                 chc f1 (chc f2 l r) r =fcc= chc (f1 &&& f2) l r.
 Proof.
-  intros f1 f2 e1 e2 c.
+  intros f1 f2 l r c.
   simpl.
   destruct (eval f1 c);
     reflexivity.
@@ -245,14 +248,15 @@ Proof.
 Qed.
 
 (** Formula-Join-Not rule. *)
-Theorem f_join_not : forall (f1 f2 : formula) (e1 e2 : fcc),
-                     chc f1 e1 (chc f2 e2 e1) =fcc= chc (join f1 (neg f2)) e1 e2.
+Theorem f_join_not : forall (f1 f2 : formula) (l r : fcc),
+                     chc f1 l (chc f2 r l) =fcc= chc (f1 ||| (neg f2)) l r.
 Proof.
+  intros f1 f2 l r.
 Admitted. (* TODO: write proof *)
 
 (** Formula-Meet-Not rewrite rule. *)
-Theorem f_meet_not : forall (f1 f2 : formula) (e1 e2 : fcc),
-                     chc f1 (chc f2 e2 e1) e2 =fcc= chc (meet f1 (neg f2)) e1 e2.
+Theorem f_meet_not : forall (f1 f2 : formula) (l r : fcc),
+                     chc f1 (chc f2 r l) l =fcc= chc (f1 &&& (neg f2)) r l.
 Proof.
 Admitted. (* TODO: write proof *)
 
@@ -266,12 +270,14 @@ Proof.
     reflexivity.
 Qed.
 
+(* TODO: C-C-Merge rule *)
+
 (** C-C-Merge rule for the case where the nested choice appears in the left
     alternative. *)
-Theorem cc_merge_l : forall (f : formula) (e1 e2 e3 : fcc),
-                     chc f (chc f e1 e2) e3 =fcc= chc f e1 e3.
+Theorem cc_merge_l : forall (f : formula) (l r e : fcc),
+                     chc f (chc f l e) r =fcc= chc f l r.
 Proof.
-  intros f e1 e2 e3 c.
+  intros f l r e c.
   simpl.
   destruct (eval f c);
     reflexivity.
@@ -279,10 +285,10 @@ Qed.
 
 (** C-C-Merge rule for the case where the nested choice appears in the right
     alternative. *)
-Theorem cc_merge_r : forall (f : formula) (e1 e2 e3 : fcc), 
-                     chc f e1 (chc f e2 e3) =fcc= chc f e1 e3.
+Theorem cc_merge_r : forall (f : formula) (l r e : fcc), 
+                     chc f l (chc f e r) =fcc= chc f l r.
 Proof.
-  intros f e1 e2 e3 c.
+  intros f l r e c.
   simpl.
   destruct (eval f c);
     reflexivity.
@@ -358,7 +364,7 @@ Proof.
     reflexivity.
   (* case: e = chc f l r *)
     simpl.
-    rewrite -> f_cong by apply neg_invo.
+    rewrite -> chc_f_cong by apply neg_invo.
     rewrite -> chc_l_cong by apply IHl.
     rewrite -> chc_r_cong by apply IHr.
     reflexivity.
