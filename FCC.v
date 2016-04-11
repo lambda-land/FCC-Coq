@@ -34,8 +34,9 @@ Inductive formula : Type :=
   | join : formula -> formula -> formula
   | meet : formula -> formula -> formula.
 
-Infix "|||" := join.
-Infix "&&&" := meet.
+Notation "~ f" := (neg f) (at level 75, right associativity).
+Infix "\/" := join (at level 85, right associativity).
+Infix "/\" := meet (at level 80, right associativity).
 
 (* Object language syntax. *)
 Inductive tree : Type :=
@@ -47,6 +48,8 @@ Inductive fcc : Type :=
   (* TODO: replace one with node and leaf *)
   | one : nat -> fcc
   | chc : formula -> fcc -> fcc -> fcc.
+
+(* TODO: write notation for choice *)
 
 (** ** Semantics *)
 
@@ -60,9 +63,9 @@ Fixpoint eval (f : formula) (c : config) : tag :=
   | top       => L
   | bot       => R
   | ref d     => c d
-  | neg f     => negb (eval f c)
-  | f1 ||| f2 => (eval f1 c) || (eval f2 c)
-  | f1 &&& f2 => (eval f1 c) && (eval f2 c)
+  | ~ f     => negb (eval f c)
+  | f1 \/ f2 => (eval f1 c) || (eval f2 c)
+  | f1 /\ f2 => (eval f1 c) && (eval f2 c)
   end.
 
 (** Formula choice calculus semantics. *)
@@ -155,7 +158,7 @@ Qed.
 
 (** Choice-Transposition rule. *)
 Theorem chc_trans : forall (f : formula) (l r : fcc),
-                    chc f l r =fcc= chc (neg f) r l.
+                    chc f l r =fcc= chc (~ f) r l.
 Proof.
   intros f l r c.
   destruct (eval f c) eqn:H;
@@ -228,7 +231,7 @@ Qed.
 
 (** Formula-Join rule. *)
 Theorem f_join : forall (f1 f2 : formula) (l r : fcc),
-                 chc f1 l (chc f2 l r) =fcc= chc (f1 ||| f2) l r.
+                 chc f1 l (chc f2 l r) =fcc= chc (f1 \/ f2) l r.
 Proof.
   intros f1 f2 l r c.
   simpl.
@@ -238,7 +241,7 @@ Qed.
 
 (** Formula-Meet rule. *)
 Theorem f_meet : forall (f1 f2 : formula) (l r : fcc),
-                 chc f1 (chc f2 l r) r =fcc= chc (f1 &&& f2) l r.
+                 chc f1 (chc f2 l r) r =fcc= chc (f1 /\ f2) l r.
 Proof.
   intros f1 f2 l r c.
   simpl.
@@ -249,14 +252,14 @@ Qed.
 
 (** Formula-Join-Not rule. *)
 Theorem f_join_not : forall (f1 f2 : formula) (l r : fcc),
-                     chc f1 l (chc f2 r l) =fcc= chc (f1 ||| (neg f2)) l r.
+                     chc f1 l (chc f2 r l) =fcc= chc (f1 \/ ~ f2) l r.
 Proof.
   intros f1 f2 l r.
 Admitted. (* TODO: write proof *)
 
 (** Formula-Meet-Not rewrite rule. *)
 Theorem f_meet_not : forall (f1 f2 : formula) (l r : fcc),
-                     chc f1 (chc f2 r l) l =fcc= chc (f1 &&& (neg f2)) r l.
+                     chc f1 (chc f2 r l) l =fcc= chc (f1 /\ ~ f2) r l.
 Proof.
 Admitted. (* TODO: write proof *)
 
@@ -340,12 +343,12 @@ Module Examples.
 Fixpoint flip (e : fcc) : fcc :=
   match e with
   | one n => one n
-  | chc f l r => chc (neg f) (flip r) (flip l)
+  | chc f l r => chc (~ f) (flip r) (flip l)
   end.
 
 (** Negation is an involution. *)
 Example neg_invo : forall f : formula,
-                   neg (neg f) =f= f.
+                   (~ ~ f) =f= f.
 Proof.
   intros f c.
   simpl.
