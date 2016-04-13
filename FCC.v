@@ -110,8 +110,10 @@ Qed.
 (** Formula equivalence is an equivalence relation. *)
 Instance f_eq : Equivalence f_equiv.
 Proof.
-  split;
-    [apply f_equiv_refl | apply f_equiv_sym | apply f_equiv_trans].
+  split.
+    apply f_equiv_refl.
+    apply f_equiv_sym.
+    apply f_equiv_trans.
 Qed.
 
 (** Formula choice calculus equivalence. *)
@@ -147,8 +149,10 @@ Qed.
 (** Formula choice calculus equivalence is an equivalence relation. *)
 Instance fcc_eq : Equivalence fcc_equiv.
 Proof.
-  split;
-    [apply fcc_equiv_refl | apply fcc_equiv_sym | apply fcc_equiv_trans].
+  split.
+    apply fcc_equiv_refl.
+    apply fcc_equiv_sym.
+    apply fcc_equiv_trans.
 Qed.
 
 (* TODO: make choice congruence rules instances of Proper typeclass. *)
@@ -158,9 +162,8 @@ Theorem chc_trans : forall (f : formula) (l r : fcc),
                     chc f l r =fcc= chc (~ f) r l.
 Proof.
   intros f l r c.
-  destruct (eval f c) eqn:H;
-    simpl;
-    rewrite -> H;
+  simpl.
+  destruct (eval f c);
     reflexivity.
 Qed.
 
@@ -256,7 +259,6 @@ Proof.
     intros f f' c.
     simpl.
     destruct (eval f c);
-      simpl;
       reflexivity.
   intros f1 f2 l r.
   rewrite -> chc_l_cong with (l' := chc (~ f2) r l) by apply chc_trans.
@@ -267,18 +269,43 @@ Proof.
   reflexivity.
 Qed.
 
-(** Formula-Join-Not rule. *)
+(** Formula-Join-Not rule. Notice that we do not unfold the definition of
+    [fcc_equiv] in the proof. *)
 Theorem f_join_not : forall (f1 f2 : formula) (l r : fcc),
                      chc f1 l (chc f2 r l) =fcc= chc (f1 \/ ~ f2) l r.
 Proof.
+  (*
+  intros f1 f2 l r c.
+  simpl.
+  destruct (eval f1 c);
+    simpl;
+    try rewrite -> negb_if;
+    reflexivity.
+  *)
   intros f1 f2 l r.
-Admitted. (* TODO: write proof *)
+  rewrite -> chc_r_cong with (r' := chc (~ f2) l r) by apply chc_trans.
+  rewrite -> f_join.
+  reflexivity.
+Qed.
 
-(** Formula-Meet-Not rule. *)
+(** Formula-Meet-Not rule. Notice that we do not unfold the definition of
+    [fcc_equiv] in the proof. *)
 Theorem f_meet_not : forall (f1 f2 : formula) (l r : fcc),
-                     chc f1 (chc f2 r l) l =fcc= chc (f1 /\ ~ f2) r l.
+                     chc f1 (chc f2 r l) r =fcc= chc (f1 /\ ~ f2) l r.
 Proof.
-Admitted. (* TODO: write proof *)
+  (*
+  intros f1 f2 l r c.
+  simpl.
+  destruct (eval f1 c);
+    simpl;
+    try rewrite -> negb_if;
+    reflexivity.
+  *)
+  intros f1 f2 l r.
+  rewrite -> chc_l_cong with (l' := chc (~ f2) l r) by apply chc_trans.
+  rewrite -> f_meet.
+  reflexivity.
+Qed.
 
 (** Choice Idempotence rule. *)
 Theorem chc_idemp : forall (f : formula) (e : fcc),
@@ -290,29 +317,44 @@ Proof.
     reflexivity.
 Qed.
 
-(* TODO: C-C-Merge rule *)
-
-(** C-C-Merge rule for the case where the nested choice appears in the left
-    alternative. *)
-Theorem cc_merge_l : forall (f : formula) (l r e : fcc),
-                     chc f (chc f l e) r =fcc= chc f l r.
+(** C-C-Merge rule. *)
+Theorem cc_merge : forall (f : formula) (l r e e' : fcc),
+                   chc f (chc f l e) (chc f e' r) =fcc= chc f l r.
 Proof.
-  intros f l r e c.
+  intros f l r e e' c.
   simpl.
   destruct (eval f c);
     reflexivity.
 Qed.
 
-(** C-C-Merge rule for the case where the nested choice appears in the right
-    alternative. *)
-Theorem cc_merge_r : forall (f : formula) (l r e : fcc), 
-                     chc f l (chc f e r) =fcc= chc f l r.
+(** C-C-Merge rule for the case where the nested choice appears in the left
+    alternative. Notice that we derive this rule from [cc_merge].*)
+Theorem cc_merge_l : forall (f : formula) (l r e : fcc),
+                     chc f (chc f l e) r =fcc= chc f l r.
 Proof.
+  (*
   intros f l r e c.
   simpl.
   destruct (eval f c);
     reflexivity.
-  (* TODO: rewrite using cc_merge_l *)
+  *)
+  intros f l r e.
+  rewrite <- chc_r_cong with (r := chc f r r) by apply chc_idemp.
+  rewrite -> cc_merge.
+  reflexivity.
+Qed.
+
+(** C-C-Merge rule for the case where the nested choice appears in the right
+    alternative. Notice that we derive this rule from [cc_merge_l]. *)
+Theorem cc_merge_r : forall (f : formula) (l r e : fcc), 
+                     chc f l (chc f e r) =fcc= chc f l r.
+Proof.
+  intros f l r e.
+  rewrite -> chc_r_cong with (r' := chc (~ f) r e) by apply chc_trans.
+  rewrite -> chc_trans.
+  rewrite -> cc_merge_l.
+  rewrite <- chc_trans.
+  reflexivity.
 Qed.
 
 (** C-C-Swap rule. *)
@@ -327,30 +369,31 @@ Proof.
 Qed.
 
 (** C-C-Swap rule for the case where the nested choice appears in the left
-    alternative of the simpler form. Notice that we do not unfold the
-    definition of [fcc_equiv] in the proof. *)
-Theorem cc_swap_l : forall (f1 f2 : formula) (e1 e2 e3 : fcc),
-                    chc f1 (chc f2 e1 e3) (chc f2 e2 e3) =fcc=
-                    chc f2 (chc f1 e1 e2) e3.
+    alternative of the simpler form. Notice that we derive this rule from
+    [cc_swap]. *)
+Theorem cc_swap_l : forall (f f' : formula) (l r r' : fcc),
+                    chc f' (chc f l r') (chc f r r') =fcc=
+                    chc f (chc f' l r) r'.
 Proof.
-  intros f1 f2 e1 e2 e3.
+  intros f f' l r r'.
   rewrite -> cc_swap.
   rewrite -> chc_r_cong by apply chc_idemp.
   reflexivity.
 Qed.
 
 (** C-C-Swap rule for the case where the nested choice appears in the right
-    alternative of the simpler form. Notice that we do not unfold the
-    definition of [fcc_equiv] in the proof. *)
-Theorem cc_swap_r : forall (f1 f2 : formula) (e1 e2 e3 : fcc),
-                    chc f1 (chc f2 e1 e2) (chc f2 e1 e3) =fcc=
-                    chc f2 e1 (chc f1 e2 e3).
+    alternative of the simpler form. Notice that we derive this rule from
+    [cc_swap_l]. *)
+Theorem cc_swap_r : forall (f f' : formula) (l l' r : fcc),
+                    chc f' (chc f l l') (chc f l r) =fcc=
+                    chc f l (chc f' l' r).
 Proof.
-  intros f1 f2 e1 e2 e3.
-  rewrite -> cc_swap.
-  rewrite -> chc_l_cong by apply chc_idemp.
+  intros f f' l l' r.
+  rewrite -> chc_l_cong with (l' := chc (~ f) l' l) by apply chc_trans.
+  rewrite -> chc_r_cong with (r' := chc (~ f) r l) by apply chc_trans.
+  rewrite -> cc_swap_l.
+  rewrite <- chc_trans.
   reflexivity.
-  (* TODO: rewrite using cc_swap_l *)
 Qed.
 
 (** ** Examples *)
