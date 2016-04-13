@@ -10,9 +10,6 @@ Require Import Setoids.Setoid.
 
 Module FCC.
 
-Definition admit {T: Type} : T.
-Admitted.
-
 (** ** Syntax *)
 
 (** Syntax of binary formula choice calculus expressions with global dimensions.
@@ -38,7 +35,7 @@ Notation "~ f" := (neg f) (at level 75, right associativity).
 Infix "\/" := join (at level 85, right associativity).
 Infix "/\" := meet (at level 80, right associativity).
 
-(* Object language syntax. *)
+(** Object language syntax. *)
 Inductive tree : Type :=
   | t_leaf : nat -> tree
   | t_node : nat -> tree -> tree -> tree.
@@ -225,10 +222,13 @@ Proof.
   intros l r c.
   reflexivity.
   *)
+  assert (H : (~ bot) =f= top).
+    intro c.
+    reflexivity.
   intros l r.
   rewrite -> chc_trans.
-  rewrite -> chc_f_cong with (f' := top);
-    [apply f_top | intro c; reflexivity].
+  rewrite -> chc_f_cong by apply H.
+  apply f_top.
 Qed.
 
 (** Formula-Join rule. *)
@@ -241,15 +241,30 @@ Proof.
     reflexivity.
 Qed.
 
-(** Formula-Meet rule. *)
+(** Formula-Meet rule. Notice that we do not unfold the definition of
+    [fcc_equiv] in the proof. *)
 Theorem f_meet : forall (f1 f2 : formula) (l r : fcc),
                  chc f1 (chc f2 l r) r =fcc= chc (f1 /\ f2) l r.
 Proof.
+  (*
   intros f1 f2 l r c.
   simpl.
   destruct (eval f1 c);
     reflexivity.
-  (* TODO: rewrite proof *)
+  *)
+  assert (H : forall f f' : formula, (~ f \/ ~ f') =f= ~ (f /\ f')).
+    intros f f' c.
+    simpl.
+    destruct (eval f c);
+      simpl;
+      reflexivity.
+  intros f1 f2 l r.
+  rewrite -> chc_l_cong with (l' := chc (~ f2) r l) by apply chc_trans.
+  rewrite -> chc_trans.
+  rewrite -> f_join.
+  rewrite -> chc_f_cong with (f' := ~ (f1 /\ f2)) by apply H.
+  rewrite <- chc_trans.
+  reflexivity.
 Qed.
 
 (** Formula-Join-Not rule. *)
