@@ -31,6 +31,7 @@ Inductive formula : Type :=
   | join : formula -> formula -> formula
   | meet : formula -> formula -> formula.
 
+(* TODO: add scope to notation *)
 Notation "~ f" := (neg f) (at level 75, right associativity).
 Infix "\/" := join (at level 85, right associativity).
 Infix "/\" := meet (at level 80, right associativity).
@@ -46,7 +47,7 @@ Inductive fcc : Type :=
   | one : nat -> fcc
   | chc : formula -> fcc -> fcc -> fcc.
 
-(* TODO: write notation for choice *)
+(* TODO: write notation for choice. *)
 
 (** ** Semantics *)
 
@@ -75,7 +76,8 @@ Fixpoint sem (e : fcc) (c : config) : nat :=
 (** ** Equivalence *)
 
 (** Statement and proof of semantic equivalence rules from the TOSEM paper (for
-    formula choice calculus), the GPCE paper, and some additional rules. *)
+    formula choice calculus), the GPCE paper, and some additional rules.
+    Multiple proofs are given when it is instructive. *)
 
 (** Formula equivalence. *)
 Definition f_equiv : relation formula :=
@@ -155,7 +157,7 @@ Proof.
     apply fcc_equiv_trans.
 Qed.
 
-(* TODO: make choice congruence rules instances of Proper typeclass. *)
+(* TODO: make choice congruence rules instances of [Proper] typeclass. *)
 
 (** Choice-Transposition rule. *)
 Theorem chc_trans : forall (f : formula) (l r : fcc),
@@ -320,16 +322,20 @@ Qed.
 Theorem chc_idemp : forall (f : formula) (e : fcc),
                     chc f e e =fcc= e.
 Proof.
+  (* Proof by unfolding [fcc_equiv]. *)
   intros f e c.
   simpl.
   destruct (eval f c);
     reflexivity.
 Qed.
 
+(* TODO: state and proof choice domination rule *)
+
 (** C-C-Merge rule. *)
 Theorem cc_merge : forall (f : formula) (l r e e' : fcc),
                    chc f (chc f l e) (chc f e' r) =fcc= chc f l r.
 Proof.
+  (* Proof by unfolding [fcc_equiv]. *)
   intros f l r e e' c.
   simpl.
   destruct (eval f c);
