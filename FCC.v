@@ -1,6 +1,6 @@
 (** * Formula Choice Calculus (FCC) *)
 
-(* TODO: edit imports *)
+(* TODO: edit imports. *)
 Require Import Bool.
 Require Import Relations.Relation_Definitions.
 (* Require Import Classes.RelationClasses. *)
@@ -31,7 +31,7 @@ Inductive formula : Type :=
   | join : formula -> formula -> formula
   | meet : formula -> formula -> formula.
 
-(* TODO: add scope to notation *)
+(* TODO: add scope to notation. *)
 Notation "~ f" := (neg f) (at level 75, right associativity).
 Infix "\/" := join (at level 85, right associativity).
 Infix "/\" := meet (at level 80, right associativity).
@@ -329,7 +329,7 @@ Proof.
     reflexivity.
 Qed.
 
-(* TODO: state and proof choice domination rule *)
+(* TODO: state and proof choice domination rule. *)
 
 (** C-C-Merge rule. *)
 Theorem cc_merge : forall (f : formula) (l r e e' : fcc),
@@ -442,7 +442,7 @@ Proof.
     simpl.
     rewrite -> negb_involutive.
     reflexivity.
-  (* Main proof. *)
+  (* Proof of [flip_invo]. *)
   intros e.
   induction e as [n | f l IHl r IHr].
   (* Case: [e = one n]. *)
