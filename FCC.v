@@ -161,6 +161,7 @@ Qed.
 Theorem chc_trans : forall (f : formula) (l r : fcc),
                     chc f l r =fcc= chc (~ f) r l.
 Proof.
+  (* Proof by unfolding [fcc_equiv]. *)
   intros f l r c.
   simpl.
   destruct (eval f c);
@@ -172,6 +173,7 @@ Theorem chc_f_cong : forall (f f' : formula) (l r : fcc),
                  f =f= f' ->
                  chc f l r =fcc= chc f' l r.
 Proof.
+  (* Proof by unfolding [fcc_equiv]. *)
   intros f f' l r H c.
   simpl.
   rewrite -> H.
@@ -183,24 +185,25 @@ Theorem chc_l_cong : forall (f : formula) (l l' r : fcc),
                      l =fcc= l' ->
                      chc f l r =fcc= chc f l' r.
 Proof.
+  (* Proof by unfolding [fcc_equiv]. *)
   intros f l l' r H c.
   simpl.
   rewrite -> H.
   reflexivity.
 Qed.
 
-(** Choice-R-Congruence rule for right alternatives. Notice that we do not
-    unfold the definition of [fcc_equiv] in the proof. *)
+(** Choice-R-Congruence rule for right alternatives. *)
 Theorem chc_r_cong : forall (f : formula) (l r r' : fcc),
                      r =fcc= r' ->
                      chc f l r =fcc= chc f l r'.
 Proof.
-  (*
+  (* Proof by unfolding [fcc_equiv]. *)
   intros f l r r' H c.
   simpl.
   rewrite -> H.
   reflexivity.
-  *)
+Restart.
+  (* Proof by deriving from [chc_l_cong]. *)
   intros f l r r' H.
   rewrite -> chc_trans.
   rewrite -> chc_l_cong by apply H.
@@ -212,22 +215,25 @@ Qed.
 Theorem f_top : forall (l r : fcc),
                 chc top l r =fcc= l.
 Proof.
+  (* Proof by unfolding [fcc_equiv]. *)
   intros l r c.
   reflexivity.
 Qed.
 
-(** Formula-Bottom rule. Notice that we do not unfold the definition of
-    [fcc_equiv] in the proof. *)
+(** Formula-Bottom rule. *)
 Theorem f_bot : forall (l r : fcc),
                 chc bot l r =fcc= r.
 Proof.
-  (*
+  (* Proof by unfolding [fcc_equiv]. *)
   intros l r c.
   reflexivity.
-  *)
+Restart.
+  (* Proof by deriving from [f_top]. *)
   assert (H : (~ bot) =f= top).
+    (* Proof of assertion [H]. *)
     intro c.
     reflexivity.
+  (* Proof of [f_bot]. *)
   intros l r.
   rewrite -> chc_trans.
   rewrite -> chc_f_cong by apply H.
@@ -238,28 +244,31 @@ Qed.
 Theorem f_join : forall (f1 f2 : formula) (l r : fcc),
                  chc f1 l (chc f2 l r) =fcc= chc (f1 \/ f2) l r.
 Proof.
+  (* Proof by unfolding [fcc_equiv]. *)
   intros f1 f2 l r c.
   simpl.
   destruct (eval f1 c);
     reflexivity.
 Qed.
 
-(** Formula-Meet rule. Notice that we do not unfold the definition of
-    [fcc_equiv] in the proof. *)
+(** Formula-Meet rule. *)
 Theorem f_meet : forall (f1 f2 : formula) (l r : fcc),
                  chc f1 (chc f2 l r) r =fcc= chc (f1 /\ f2) l r.
 Proof.
-  (*
+  (* Proof by unfolding [fcc_equiv]. *)
   intros f1 f2 l r c.
   simpl.
   destruct (eval f1 c);
     reflexivity.
-  *)
+Restart.
+  (* Proof by deriving from [f_join]. *)
   assert (H : forall f f' : formula, (~ f \/ ~ f') =f= ~ (f /\ f')).
+    (* Proof of assertion [H]. *)
     intros f f' c.
     simpl.
     destruct (eval f c);
       reflexivity.
+  (* Proof of [f_meet]. *)
   intros f1 f2 l r.
   rewrite -> chc_l_cong with (l' := chc (~ f2) r l) by apply chc_trans.
   rewrite -> chc_trans.
@@ -269,38 +278,38 @@ Proof.
   reflexivity.
 Qed.
 
-(** Formula-Join-Not rule. Notice that we do not unfold the definition of
-    [fcc_equiv] in the proof. *)
+(** Formula-Join-Not rule. *)
 Theorem f_join_not : forall (f1 f2 : formula) (l r : fcc),
                      chc f1 l (chc f2 r l) =fcc= chc (f1 \/ ~ f2) l r.
 Proof.
-  (*
+  (* Proof by unfolding [fcc_equiv]. *)
   intros f1 f2 l r c.
   simpl.
   destruct (eval f1 c);
     simpl;
     try rewrite -> negb_if;
     reflexivity.
-  *)
+Restart.
+  (* Proof by deriving from [f_join]. *)
   intros f1 f2 l r.
   rewrite -> chc_r_cong with (r' := chc (~ f2) l r) by apply chc_trans.
   rewrite -> f_join.
   reflexivity.
 Qed.
 
-(** Formula-Meet-Not rule. Notice that we do not unfold the definition of
-    [fcc_equiv] in the proof. *)
+(** Formula-Meet-Not rule. *)
 Theorem f_meet_not : forall (f1 f2 : formula) (l r : fcc),
                      chc f1 (chc f2 r l) r =fcc= chc (f1 /\ ~ f2) l r.
 Proof.
-  (*
+  (* Proof by unfolding [fcc_equiv]. *)
   intros f1 f2 l r c.
   simpl.
   destruct (eval f1 c);
     simpl;
     try rewrite -> negb_if;
     reflexivity.
-  *)
+Restart.
+  (* Proof by deriving from [f_meet]. *)
   intros f1 f2 l r.
   rewrite -> chc_l_cong with (l' := chc (~ f2) l r) by apply chc_trans.
   rewrite -> f_meet.
@@ -328,16 +337,17 @@ Proof.
 Qed.
 
 (** C-C-Merge rule for the case where the nested choice appears in the left
-    alternative. Notice that we derive this rule from [cc_merge].*)
+    alternative. *)
 Theorem cc_merge_l : forall (f : formula) (l r e : fcc),
                      chc f (chc f l e) r =fcc= chc f l r.
 Proof.
-  (*
+  (* Proof by unfolding [fcc_equiv]. *)
   intros f l r e c.
   simpl.
   destruct (eval f c);
     reflexivity.
-  *)
+Restart.
+  (* Proof by deriving from [cc_merge]. *)
   intros f l r e.
   rewrite <- chc_r_cong with (r := chc f r r) by apply chc_idemp.
   rewrite -> cc_merge.
@@ -345,10 +355,11 @@ Proof.
 Qed.
 
 (** C-C-Merge rule for the case where the nested choice appears in the right
-    alternative. Notice that we derive this rule from [cc_merge_l]. *)
+    alternative. *)
 Theorem cc_merge_r : forall (f : formula) (l r e : fcc), 
                      chc f l (chc f e r) =fcc= chc f l r.
 Proof.
+  (* Proof by deriving from [cc_merge_l]. *)
   intros f l r e.
   rewrite -> chc_r_cong with (r' := chc (~ f) r e) by apply chc_trans.
   rewrite -> chc_trans.
@@ -362,6 +373,7 @@ Theorem cc_swap : forall (f1 f2 : formula) (e1 e2 e3 e4 : fcc),
                   chc f1 (chc f2 e1 e2) (chc f2 e3 e4) =fcc=
                   chc f2 (chc f1 e1 e3) (chc f1 e2 e4).
 Proof.
+  (* Proof by unfolding [fcc_equiv]. *)
   intros f1 f2 e1 e2 e3 e4 c.
   simpl.
   destruct (eval f1 c);
@@ -369,12 +381,18 @@ Proof.
 Qed.
 
 (** C-C-Swap rule for the case where the nested choice appears in the left
-    alternative of the simpler form. Notice that we derive this rule from
-    [cc_swap]. *)
+    alternative of the simpler form. *)
 Theorem cc_swap_l : forall (f f' : formula) (l r r' : fcc),
                     chc f' (chc f l r') (chc f r r') =fcc=
                     chc f (chc f' l r) r'.
 Proof.
+  (* Proof by unfolding [fcc_equiv]. *)
+  intros f f' l r r' c.
+  simpl.
+  destruct (eval f' c);
+    reflexivity.
+Restart.
+  (* Proof by deriving from [cc_swap]. *)
   intros f f' l r r'.
   rewrite -> cc_swap.
   rewrite -> chc_r_cong by apply chc_idemp.
@@ -382,12 +400,12 @@ Proof.
 Qed.
 
 (** C-C-Swap rule for the case where the nested choice appears in the right
-    alternative of the simpler form. Notice that we derive this rule from
-    [cc_swap_l]. *)
+    alternative of the simpler form. *)
 Theorem cc_swap_r : forall (f f' : formula) (l l' r : fcc),
                     chc f' (chc f l l') (chc f l r) =fcc=
                     chc f l (chc f' l' r).
 Proof.
+  (* Proof by deriving from [cc_swap_l]. *)
   intros f f' l l' r.
   rewrite -> chc_l_cong with (l' := chc (~ f) l' l) by apply chc_trans.
   rewrite -> chc_r_cong with (r' := chc (~ f) r l) by apply chc_trans.
@@ -401,28 +419,29 @@ Qed.
 (** Examples of some additional properties of formula choice calculus. *)
 Module Examples.
 
-(** Flip operation for formula choice calculus expressions. *)
+(** Flip operation. *)
 Fixpoint flip (e : fcc) : fcc :=
   match e with
   | one n => one n
   | chc f l r => chc (~ f) (flip r) (flip l)
   end.
 
-(** The flip operation for formula choice calculus expressions is an
-    involution. *)
+(** The flip operation is an involution. *)
 Example flip_invo : forall e : fcc,
                     flip (flip e) =fcc= e.
 Proof.
   assert (H : forall f : formula, (~ ~ f) =f= f).
+    (* Proof of assertion [H]. *)
     intros f c.
     simpl.
     rewrite -> negb_involutive.
     reflexivity.
+  (* Main proof. *)
   intros e.
   induction e as [n | f l IHl r IHr].
-  (* case: e = one n *)
+  (* Case: [e = one n]. *)
     reflexivity.
-  (* case: e = chc f l r *)
+  (* Case: [e = chc f l r]. *)
     simpl.
     rewrite -> chc_f_cong by apply H.
     rewrite -> chc_l_cong by apply IHl.
