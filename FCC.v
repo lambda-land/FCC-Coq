@@ -408,28 +408,23 @@ Fixpoint flip (e : fcc) : fcc :=
   | chc f l r => chc (~ f) (flip r) (flip l)
   end.
 
-(** Negation is an involution. *)
-Example neg_invo : forall f : formula,
-                   (~ ~ f) =f= f.
-Proof.
-  intros f c.
-  simpl.
-  rewrite -> negb_involutive.
-  reflexivity.
-Qed.
-
 (** The flip operation for formula choice calculus expressions is an
     involution. *)
 Example flip_invo : forall e : fcc,
                     flip (flip e) =fcc= e.
 Proof.
+  assert (H : forall f : formula, (~ ~ f) =f= f).
+    intros f c.
+    simpl.
+    rewrite -> negb_involutive.
+    reflexivity.
   intros e.
   induction e as [n | f l IHl r IHr].
   (* case: e = one n *)
     reflexivity.
   (* case: e = chc f l r *)
     simpl.
-    rewrite -> chc_f_cong by apply neg_invo.
+    rewrite -> chc_f_cong by apply H.
     rewrite -> chc_l_cong by apply IHl.
     rewrite -> chc_r_cong by apply IHr.
     reflexivity.
