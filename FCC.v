@@ -43,9 +43,9 @@ Inductive tree : Type :=
 
 (** Formula choice calculus syntax. *)
 Inductive fcc : Type :=
-  (* TODO: replace one with node and leaf *)
-  | one : nat -> fcc
-  | chc : formula -> fcc -> fcc -> fcc.
+  | leaf : nat -> fcc
+  | node : nat -> fcc -> fcc -> fcc
+  | chc  : formula -> fcc -> fcc -> fcc.
 
 (* TODO: write notation for choice. *)
 
@@ -67,10 +67,11 @@ Fixpoint eval (f : formula) (c : config) : tag :=
   end.
 
 (** Formula choice calculus semantics. *)
-Fixpoint sem (e : fcc) (c : config) : nat :=
+Fixpoint sem (e : fcc) (c : config) : tree :=
   match e with
-  | one n     => n
-  | chc f l r => if eval f c then sem l c else sem r c
+  | leaf n     => t_leaf n
+  | node n l r => t_node n (sem l c) (sem r c)
+  | chc f l r  => if eval f c then sem l c else sem r c
   end.
 
 (** ** Equivalence *)
@@ -420,6 +421,39 @@ Proof.
   reflexivity.
 Qed.
 
+(** AST-Factoring rule. *)
+Theorem ast_factor : forall (n : nat) (f : formula) (l l' r r' : fcc),
+                     chc f (node n l r) (node n l' r') =fcc=
+                     node n (chc f l l') (chc f r r').
+Proof.
+  intros n f l l' r r' c.
+  simpl.
+  destruct (eval f c);
+    reflexivity.
+Qed.
+
+(** AST-L-Congruence rule. *)
+Theorem ast_l_cong : forall (n : nat) (l l' r : fcc),
+                     l =fcc= l' ->
+                     node n l r =fcc= node n l' r.
+Proof.
+  intros n l l' r H c.
+  simpl.
+  rewrite -> H.
+  reflexivity.
+Qed.
+
+(** AST-R-Congruence rule. *)
+Theorem ast_r_cong : forall (n : nat) (l r r' : fcc),
+                     r =fcc= r' ->
+                     node n l r =fcc= node n l r'.
+Proof.
+  intros n l r r' H c.
+  simpl.
+  rewrite -> H.
+  reflexivity.
+Qed.
+
 (** ** Examples *)
 
 (** Examples of some additional properties of formula choice calculus. *)
@@ -428,8 +462,8 @@ Module Examples.
 (** Flip operation. *)
 Fixpoint flip (e : fcc) : fcc :=
   match e with
-  | one n => one n
   | chc f l r => chc (~ f) (flip r) (flip l)
+  | _         => e
   end.
 
 (** The flip operation is an involution. *)
@@ -444,8 +478,10 @@ Proof.
     reflexivity.
   (* Proof of [flip_invo]. *)
   intros e.
-  induction e as [n | f l IHl r IHr].
-  (* Case: [e = one n]. *)
+  induction e as [n | n l IHl r IHr | f l IHl r IHr].
+  (* Case: [e = leaf n]. *)
+    reflexivity.
+  (* Case: [e = node n l r]. *)
     reflexivity.
   (* Case: [e = chc f l r]. *)
     simpl.
