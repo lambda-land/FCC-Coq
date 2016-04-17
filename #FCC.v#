@@ -84,7 +84,7 @@ Fixpoint sem (e : fcc) (c : config) : tree :=
 Definition f_equiv : relation formula :=
   fun f f' => forall c, (eval f c) = (eval f' c).
 
-Infix "=eval=" := f_equiv (at level 70) : type_scope.
+Infix "<==>" := f_equiv (at level 70) : type_scope.
 
 (** Formula equivalence is reflexive. *)
 Remark f_equiv_refl : Reflexive f_equiv.
@@ -123,7 +123,7 @@ Qed.
 Definition fcc_equiv : relation fcc :=
   fun e e' => forall c, (sem e c) = (sem e' c).
 
-Infix "=sem=" := fcc_equiv (at level 70) : type_scope.
+Infix "<==>" := fcc_equiv (at level 70) : type_scope.
 
 (** Formula choice calculus equivalence is reflexive. *)
 Remark fcc_equiv_refl : Reflexive fcc_equiv.
@@ -162,7 +162,7 @@ Qed.
 
 (** Choice-Transposition rule. *)
 Theorem chc_trans : forall (f : formula) (l r : fcc),
-                    chc f l r =sem= chc (~ f) r l.
+                    chc f l r <=c=> chc (~ f) r l.
 Proof.
   (* Proof by unfolding [fcc_equiv]. *)
   intros f l r c.
@@ -173,8 +173,8 @@ Qed.
 
 (** Choice-F-Congruence rule for formulas. *)
 Theorem chc_f_cong : forall (f f' : formula) (l r : fcc),
-                 f =eval= f' ->
-                 chc f l r =sem= chc f' l r.
+                 f <=f=> f' ->
+                 chc f l r <=c=> chc f' l r.
 Proof.
   (* Proof by unfolding [fcc_equiv]. *)
   intros f f' l r H c.
@@ -185,8 +185,8 @@ Qed.
 
 (** Choice-L-Congruence rule for left alternatives. *)
 Theorem chc_l_cong : forall (f : formula) (l l' r : fcc),
-                     l =sem= l' ->
-                     chc f l r =sem= chc f l' r.
+                     l <=c=> l' ->
+                     chc f l r <=c=> chc f l' r.
 Proof.
   (* Proof by unfolding [fcc_equiv]. *)
   intros f l l' r H c.
@@ -197,8 +197,8 @@ Qed.
 
 (** Choice-R-Congruence rule for right alternatives. *)
 Theorem chc_r_cong : forall (f : formula) (l r r' : fcc),
-                     r =sem= r' ->
-                     chc f l r =sem= chc f l r'.
+                     r <=c=> r' ->
+                     chc f l r <=c=> chc f l r'.
 Proof.
   (* Proof by unfolding [fcc_equiv]. *)
   intros f l r r' H c.
@@ -216,7 +216,7 @@ Qed.
 
 (** Formula-True rule. *)
 Theorem f_true : forall (l r : fcc),
-                 chc L' l r =sem= l.
+                 chc L' l r <=c=> l.
 Proof.
   (* Proof by unfolding [fcc_equiv]. *)
   intros l r c.
@@ -225,14 +225,14 @@ Qed.
 
 (** Formula-False rule. *)
 Theorem f_false : forall (l r : fcc),
-                  chc R' l r =sem= r.
+                  chc R' l r <=c=> r.
 Proof.
   (* Proof by unfolding [fcc_equiv]. *)
   intros l r c.
   reflexivity.
 Restart.
   (* Proof by deriving from [f_true]. *)
-  assert (H : (~ R') =eval= L').
+  assert (H : (~ R') <=f=> L').
     (* Proof of assertion [H]. *)
     intro c.
     reflexivity.
@@ -245,7 +245,7 @@ Qed.
 
 (** Formula-Join rule. *)
 Theorem f_join : forall (f1 f2 : formula) (l r : fcc),
-                 chc f1 l (chc f2 l r) =sem= chc (f1 \/ f2) l r.
+                 chc f1 l (chc f2 l r) <=c=> chc (f1 \/ f2) l r.
 Proof.
   (* Proof by unfolding [fcc_equiv]. *)
   intros f1 f2 l r c.
@@ -256,7 +256,7 @@ Qed.
 
 (** Formula-Meet rule. *)
 Theorem f_meet : forall (f1 f2 : formula) (l r : fcc),
-                 chc f1 (chc f2 l r) r =sem= chc (f1 /\ f2) l r.
+                 chc f1 (chc f2 l r) r <=c=> chc (f1 /\ f2) l r.
 Proof.
   (* Proof by unfolding [fcc_equiv]. *)
   intros f1 f2 l r c.
@@ -265,7 +265,7 @@ Proof.
     reflexivity.
 Restart.
   (* Proof by deriving from [f_join]. *)
-  assert (H : forall f f' : formula, (~ f \/ ~ f') =eval= ~ (f /\ f')).
+  assert (H : forall f f' : formula, (~ f \/ ~ f') <=f=> ~ (f /\ f')).
     (* Proof of assertion [H]. *)
     intros f f' c.
     simpl.
@@ -283,7 +283,7 @@ Qed.
 
 (** Formula-Join-Not rule. *)
 Theorem f_join_not : forall (f1 f2 : formula) (l r : fcc),
-                     chc f1 l (chc f2 r l) =sem= chc (f1 \/ ~ f2) l r.
+                     chc f1 l (chc f2 r l) <=c=> chc (f1 \/ ~ f2) l r.
 Proof.
   (* Proof by unfolding [fcc_equiv]. *)
   intros f1 f2 l r c.
@@ -302,7 +302,7 @@ Qed.
 
 (** Formula-Meet-Not rule. *)
 Theorem f_meet_not : forall (f1 f2 : formula) (l r : fcc),
-                     chc f1 (chc f2 r l) r =sem= chc (f1 /\ ~ f2) l r.
+                     chc f1 (chc f2 r l) r <=c=> chc (f1 /\ ~ f2) l r.
 Proof.
   (* Proof by unfolding [fcc_equiv]. *)
   intros f1 f2 l r c.
@@ -321,7 +321,7 @@ Qed.
 
 (** Choice Idempotence rule. *)
 Theorem chc_idemp : forall (f : formula) (e : fcc),
-                    chc f e e =sem= e.
+                    chc f e e <=c=> e.
 Proof.
   (* Proof by unfolding [fcc_equiv]. *)
   intros f e c.
@@ -334,7 +334,7 @@ Qed.
 
 (** C-C-Merge rule. *)
 Theorem cc_merge : forall (f : formula) (l r e e' : fcc),
-                   chc f (chc f l e) (chc f e' r) =sem= chc f l r.
+                   chc f (chc f l e) (chc f e' r) <=c=> chc f l r.
 Proof.
   (* Proof by unfolding [fcc_equiv]. *)
   intros f l r e e' c.
@@ -346,7 +346,7 @@ Qed.
 (** C-C-Merge rule for the case where the nested choice appears in the left
     alternative. *)
 Theorem cc_merge_l : forall (f : formula) (l r e : fcc),
-                     chc f (chc f l e) r =sem= chc f l r.
+                     chc f (chc f l e) r <=c=> chc f l r.
 Proof.
   (* Proof by unfolding [fcc_equiv]. *)
   intros f l r e c.
@@ -364,7 +364,7 @@ Qed.
 (** C-C-Merge rule for the case where the nested choice appears in the right
     alternative. *)
 Theorem cc_merge_r : forall (f : formula) (l r e : fcc), 
-                     chc f l (chc f e r) =sem= chc f l r.
+                     chc f l (chc f e r) <=c=> chc f l r.
 Proof.
   (* Proof by deriving from [cc_merge_l]. *)
   intros f l r e.
@@ -377,7 +377,7 @@ Qed.
 
 (** C-C-Swap rule. *)
 Theorem cc_swap : forall (f1 f2 : formula) (e1 e2 e3 e4 : fcc),
-                  chc f1 (chc f2 e1 e2) (chc f2 e3 e4) =sem=
+                  chc f1 (chc f2 e1 e2) (chc f2 e3 e4) <=c=>
                   chc f2 (chc f1 e1 e3) (chc f1 e2 e4).
 Proof.
   (* Proof by unfolding [fcc_equiv]. *)
@@ -390,7 +390,7 @@ Qed.
 (** C-C-Swap rule for the case where the nested choice appears in the left
     alternative of the simpler form. *)
 Theorem cc_swap_l : forall (f f' : formula) (l r r' : fcc),
-                    chc f' (chc f l r') (chc f r r') =sem=
+                    chc f' (chc f l r') (chc f r r') <=c=>
                     chc f (chc f' l r) r'.
 Proof.
   (* Proof by unfolding [fcc_equiv]. *)
@@ -409,7 +409,7 @@ Qed.
 (** C-C-Swap rule for the case where the nested choice appears in the right
     alternative of the simpler form. *)
 Theorem cc_swap_r : forall (f f' : formula) (l l' r : fcc),
-                    chc f' (chc f l l') (chc f l r) =sem=
+                    chc f' (chc f l l') (chc f l r) <=c=>
                     chc f l (chc f' l' r).
 Proof.
   (* Proof by deriving from [cc_swap_l]. *)
@@ -423,7 +423,7 @@ Qed.
 
 (** AST-Factoring rule. *)
 Theorem ast_factor : forall (n : nat) (f : formula) (l l' r r' : fcc),
-                     chc f (node' n l r) (node' n l' r') =sem=
+                     chc f (node' n l r) (node' n l' r') <=c=>
                      node' n (chc f l l') (chc f r r').
 Proof.
   intros n f l l' r r' c.
@@ -434,8 +434,8 @@ Qed.
 
 (** AST-L-Congruence rule. *)
 Theorem ast_l_cong : forall (n : nat) (l l' r : fcc),
-                     l =sem= l' ->
-                     node' n l r =sem= node' n l' r.
+                     l <=c=> l' ->
+                     node' n l r <=c=> node' n l' r.
 Proof.
   intros n l l' r H c.
   simpl.
@@ -445,8 +445,8 @@ Qed.
 
 (** AST-R-Congruence rule. *)
 Theorem ast_r_cong : forall (n : nat) (l r r' : fcc),
-                     r =sem= r' ->
-                     node' n l r =sem= node' n l r'.
+                     r <=c=> r' ->
+                     node' n l r <=c=> node' n l r'.
 Proof.
   intros n l r r' H c.
   simpl.
@@ -468,9 +468,9 @@ Fixpoint flip (e : fcc) : fcc :=
 
 (** The flip operation is an involution. *)
 Example flip_invo : forall e : fcc,
-                    flip (flip e) =sem= e.
+                    flip (flip e) <=c=> e.
 Proof.
-  assert (H : forall f : formula, (~ ~ f) =eval= f).
+  assert (H : forall f : formula, (~ ~ f) <=f=> f).
     (* Proof of assertion [H]. *)
     intros f c.
     simpl.
