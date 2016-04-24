@@ -11,9 +11,8 @@ Require Import Setoids.Setoid.
 Module FCC.
 
 (** ** Syntax *)
-
-(** Syntax of binary formula choice calculus expressions with global dimensions.
-    The object language is binary tree. *)
+(** Syntax of choice calculus expressions with global dimensions and formula
+    choices. The object language is binary tree. *)
 
 (** Dimensions and configurations. *)
 Definition dim := nat.
@@ -50,10 +49,8 @@ Inductive fcc : Type :=
 (* TODO: write notation for choice. *)
 
 (** ** Semantics *)
-
 (** The semantics of a formula choice calculus expression is a function from
-    selections/configuration to plain binary trees. A selection is a (total)
-    function from a dimension name to the tag to select. *)
+    configuration to plain binary trees. *)
 
 (** Formula semantics. *)
 Fixpoint eval (f : formula) (c : config) : tag :=
@@ -75,10 +72,8 @@ Fixpoint sem (e : fcc) (c : config) : tree :=
   end.
 
 (** ** Equivalence *)
-
-(** Statement and proof of semantic equivalence rules from the TOSEM paper (for
-    formula choice calculus), the GPCE paper, and some additional rules.
-    Multiple proofs are given when it is instructive. *)
+(** Statement and proof of semantic equivalence rules from my thesis. Multiple
+    proofs are given when it is instructive. *)
 
 (** Formula equivalence. *)
 Definition f_equiv : relation formula :=
@@ -214,8 +209,8 @@ Restart.
   reflexivity.
 Qed.
 
-(** Formula-True rule. *)
-Theorem f_true : forall (l r : fcc),
+(** Formula-Tag-L rule. *)
+Theorem f_tag_l : forall (l r : fcc),
                  chc L' l r =sem= l.
 Proof.
   (* Proof by unfolding [fcc_equiv]. *)
@@ -223,24 +218,24 @@ Proof.
   reflexivity.
 Qed.
 
-(** Formula-False rule. *)
-Theorem f_false : forall (l r : fcc),
+(** Formula-Tag-L rule. *)
+Theorem f_tag_r : forall (l r : fcc),
                   chc R' l r =sem= r.
 Proof.
   (* Proof by unfolding [fcc_equiv]. *)
   intros l r c.
   reflexivity.
 Restart.
-  (* Proof by deriving from [f_true]. *)
+  (* Proof by deriving from [f_tag_l]. *)
   assert (H : (~ R') =eval= L').
     (* Proof of assertion [H]. *)
     intro c.
     reflexivity.
-  (* Proof of [f_false]. *)
+  (* Proof of [f_tag_r]. *)
   intros l r.
   rewrite -> chc_trans.
   rewrite -> chc_f_cong by apply H.
-  apply f_true.
+  apply f_tag_l.
 Qed.
 
 (** Formula-Join rule. *)
@@ -266,7 +261,7 @@ Proof.
 Restart.
   (* Proof by deriving from [f_join]. *)
   assert (H : forall f f' : formula, (~ f \/ ~ f') =eval= ~ (f /\ f')).
-    (* Proof of assertion [H]. *)
+    (* Proof of assertion [H] which is one of De Morgan's laws. *)
     intros f f' c.
     simpl.
     destruct (eval f c);
@@ -330,7 +325,7 @@ Proof.
     reflexivity.
 Qed.
 
-(* TODO: state and proof choice domination rule. *)
+(* TODO: choice domination rule? *)
 
 (** C-C-Merge rule. *)
 Theorem cc_merge : forall (f : formula) (l r e e' : fcc),
@@ -455,7 +450,6 @@ Proof.
 Qed.
 
 (** ** Examples *)
-
 (** Examples of some additional properties of formula choice calculus. *)
 Module Examples.
 
@@ -471,7 +465,7 @@ Example flip_invo : forall e : fcc,
                     flip (flip e) =sem= e.
 Proof.
   assert (H : forall f : formula, (~ ~ f) =eval= f).
-    (* Proof of assertion [H]. *)
+    (* Proof of assertion [H] which states that complement is an involution. *)
     intros f c.
     simpl.
     rewrite -> negb_involutive.
