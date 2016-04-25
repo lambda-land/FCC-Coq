@@ -1,14 +1,11 @@
 (** * Formula Choice Calculus (FCC) *)
 
-(* TODO: edit imports. *)
 Require Import Bool.
 Require Import Relations.Relation_Definitions.
-(* Require Import Classes.RelationClasses. *)
 Require Import Classes.Morphisms.
-(* Require Import Classes.Equivalence. *)
 Require Import Setoids.Setoid.
 
-(* TODO: better way to do this? *)
+(* TODO: import Formula correctly *)
 Load Formula.
 Import Formula.
 
