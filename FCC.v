@@ -8,362 +8,285 @@ Require Import Classes.Morphisms.
 (* Require Import Classes.Equivalence. *)
 Require Import Setoids.Setoid.
 
+(* TODO: better way to do this? *)
+Load Formula.
+Import Formula.
+
 Module FCC.
 
 (** ** Syntax *)
 (** Syntax of choice calculus expressions with global dimensions and formula
-    choices. The object language is binary tree. *)
+    choices. The object language is binary trees. *)
 
-(** Dimensions and configurations. *)
-Definition dim := nat.
-Definition tag := bool.
-Definition L : tag := true.
-Definition R : tag := false.
-Definition config := dim -> tag.
+(** Object language syntax. *)
+Inductive obj : Type :=
+  | empty : obj
+  | tree  : unit -> obj -> obj -> obj.
 
-(** Formula syntax. *)
-Inductive formula : Type :=
-  | L'   : formula
-  | R'   : formula
-  | ref  : dim -> formula
-  | neg  : formula -> formula
-  | join : formula -> formula -> formula
-  | meet : formula -> formula -> formula.
-
-(* TODO: add scope to notation. *)
-Notation "~ f" := (neg f) (at level 75, right associativity).
-Infix "\/" := join (at level 85, right associativity).
-Infix "/\" := meet (at level 80, right associativity).
-
-(** Binary tree syntax. *)
-Inductive tree : Type :=
-  | leaf : nat -> tree
-  | node : nat -> tree -> tree -> tree.
-
-(** Formula choice calculus syntax. *)
-Inductive fcc : Type :=
-  | leaf' : nat -> fcc
-  | node' : nat -> fcc -> fcc -> fcc
-  | chc   : formula -> fcc -> fcc -> fcc.
+(** Expression syntax. *)
+Inductive cc : Type :=
+  | empty' : cc
+  | tree'  : unit -> cc -> cc -> cc
+  | chc    : formula -> cc -> cc -> cc.
 
 (* TODO: write notation for choice. *)
 
 (** ** Semantics *)
-(** The semantics of a formula choice calculus expression is a function from
-    configuration to plain binary trees. *)
+(** The semantics of a choice calculus expression is a function from
+    configuration to binary trees. *)
 
-(** Formula semantics. *)
-Fixpoint eval (f : formula) (c : config) : tag :=
-  match f with
-  | L'       => L
-  | R'       => R
-  | ref d    => c d
-  | ~ f      => negb (eval f c)
-  | f1 \/ f2 => (eval f1 c) || (eval f2 c)
-  | f1 /\ f2 => (eval f1 c) && (eval f2 c)
-  end.
-
-(** Formula choice calculus semantics. *)
-Fixpoint sem (e : fcc) (c : config) : tree :=
+(** Expression semantics. *)
+Fixpoint seme (e : cc) (c : config) : obj :=
   match e with
-  | leaf' n     => leaf n
-  | node' n l r => node n (sem l c) (sem r c)
-  | chc f l r   => if eval f c then sem l c else sem r c
+  | empty'      => empty
+  | tree' x l r => tree x (seme l c) (seme r c)
+  | chc f l r   => if semf f c then seme l c else seme r c
   end.
 
-(** ** Equivalence *)
-(** Statement and proof of semantic equivalence rules from my thesis. Multiple
-    proofs are given when it is instructive. *)
+(** ** Semantic Equivalence Rules *)
+(** Statement and proof of semantic equivalence rules for expressions from my
+    thesis. Multiple proofs are given when it is instructive. *)
 
-(** Formula equivalence. *)
-Definition f_equiv : relation formula :=
-  fun f f' => forall c, (eval f c) = (eval f' c).
+(** Semantic equivalence for expressions. *)
+Definition equive : relation cc :=
+  fun e e' => forall c, (seme e c) = (seme e' c).
 
-Infix "=eval=" := f_equiv (at level 70) : type_scope.
+Infix "=e=" := equive (at level 70) : type_scope.
 
-(** Formula equivalence is reflexive. *)
-Remark f_equiv_refl : Reflexive f_equiv.
+(** Expression equivalence is reflexive. *)
+Remark equive_refl : Reflexive equive.
 Proof.
   intros x c.
   reflexivity.
 Qed.
 
-(** Formula equivalence is symmetric. *)
-Remark f_equiv_sym : Symmetric f_equiv.
+(** Expression equivalence is symmetric. *)
+Remark equive_sym : Symmetric equive.
 Proof.
   intros x y H c.
   symmetry.
   apply H.
 Qed.
 
-(** Formula equivalence is transitive. *)
-Remark f_equiv_trans : Transitive f_equiv.
+(** Expression equivalence is transitive. *)
+Remark equive_trans : Transitive equive.
 Proof.
   intros x y z H1 H2 c.
-  transitivity (eval y c).
+  transitivity (seme y c).
     apply H1.
     apply H2.
 Qed.
 
-(** Formula equivalence is an equivalence relation. *)
-Instance f_eq : Equivalence f_equiv.
+(** Expression equivalence is an equivalence relation. *)
+Instance eqe : Equivalence equive.
 Proof.
   split.
-    apply f_equiv_refl.
-    apply f_equiv_sym.
-    apply f_equiv_trans.
-Qed.
-
-(** Formula choice calculus equivalence. *)
-Definition fcc_equiv : relation fcc :=
-  fun e e' => forall c, (sem e c) = (sem e' c).
-
-Infix "=sem=" := fcc_equiv (at level 70) : type_scope.
-
-(** Formula choice calculus equivalence is reflexive. *)
-Remark fcc_equiv_refl : Reflexive fcc_equiv.
-Proof.
-  intros x c.
-  reflexivity.
-Qed.
-
-(** Formula choice calculus equivalence is symmetric. *)
-Remark fcc_equiv_sym : Symmetric fcc_equiv.
-Proof.
-  intros x y H c.
-  symmetry.
-  apply H.
-Qed.
-
-(** Formula choice calculus equivalence is transitive. *)
-Remark fcc_equiv_trans : Transitive fcc_equiv.
-Proof.
-  intros x y z H1 H2 c.
-  transitivity (sem y c).
-    apply H1.
-    apply H2.
-Qed.
-
-(** Formula choice calculus equivalence is an equivalence relation. *)
-Instance fcc_eq : Equivalence fcc_equiv.
-Proof.
-  split.
-    apply fcc_equiv_refl.
-    apply fcc_equiv_sym.
-    apply fcc_equiv_trans.
+    apply equive_refl.
+    apply equive_sym.
+    apply equive_trans.
 Qed.
 
 (* TODO: make choice congruence rules instances of [Proper] typeclass. *)
 
-(** Choice-Transposition rule. *)
-Theorem chc_trans : forall (f : formula) (l r : fcc),
-                    chc f l r =sem= chc (~ f) r l.
+(** Choice transposition rule. *)
+Theorem chc_trans : forall (f : formula) (l r : cc),
+                    chc f l r =e= chc (~ f) r l.
 Proof.
-  (* Proof by unfolding [fcc_equiv]. *)
+  (* Proof by unfolding [equive]. *)
   intros f l r c.
   simpl.
-  destruct (eval f c);
+  destruct (semf f c);
     reflexivity.
 Qed.
 
-(** Choice-F-Congruence rule for formulas. *)
-Theorem chc_f_cong : forall (f f' : formula) (l r : fcc),
-                 f =eval= f' ->
-                 chc f l r =sem= chc f' l r.
+(** Choice congruence rule for labels. *)
+Theorem chc_cong_f : forall (f f' : formula) (l r : cc),
+                     f =f= f' ->
+                     chc f l r =e= chc f' l r.
 Proof.
-  (* Proof by unfolding [fcc_equiv]. *)
+  (* Proof by unfolding [equive]. *)
   intros f f' l r H c.
   simpl.
   rewrite -> H.
   reflexivity.
 Qed.
 
-(** Choice-L-Congruence rule for left alternatives. *)
-Theorem chc_l_cong : forall (f : formula) (l l' r : fcc),
-                     l =sem= l' ->
-                     chc f l r =sem= chc f l' r.
+(** Choice congruence rule for left alternatives. *)
+Theorem chc_cong_l : forall (f : formula) (l l' r : cc),
+                     l =e= l' ->
+                     chc f l r =e= chc f l' r.
 Proof.
-  (* Proof by unfolding [fcc_equiv]. *)
+  (* Proof by unfolding [equive]. *)
   intros f l l' r H c.
   simpl.
   rewrite -> H.
   reflexivity.
 Qed.
 
-(** Choice-R-Congruence rule for right alternatives. *)
-Theorem chc_r_cong : forall (f : formula) (l r r' : fcc),
-                     r =sem= r' ->
-                     chc f l r =sem= chc f l r'.
+(** Choice congruence rule for right alternatives. *)
+Theorem chc_cong_r : forall (f : formula) (l r r' : cc),
+                     r =e= r' ->
+                     chc f l r =e= chc f l r'.
 Proof.
-  (* Proof by unfolding [fcc_equiv]. *)
+  (* Proof by unfolding [equive]. *)
   intros f l r r' H c.
   simpl.
   rewrite -> H.
   reflexivity.
 Restart.
-  (* Proof by deriving from [chc_l_cong]. *)
+  (* Proof by deriving from [chc_cong_l]. *)
   intros f l r r' H.
   rewrite -> chc_trans.
-  rewrite -> chc_l_cong by apply H.
+  rewrite -> chc_cong_l by apply H.
   rewrite <- chc_trans.
   reflexivity.
 Qed.
 
-(** Formula-Tag-L rule. *)
-Theorem f_tag_l : forall (l r : fcc),
-                 chc L' l r =sem= l.
+(** Choice simplification rule for left label. *)
+Theorem chc_f_l : forall (l r : cc),
+                  chc (litT L) l r =e= l.
 Proof.
-  (* Proof by unfolding [fcc_equiv]. *)
+  (* Proof by unfolding [equive]. *)
   intros l r c.
   reflexivity.
 Qed.
 
-(** Formula-Tag-L rule. *)
-Theorem f_tag_r : forall (l r : fcc),
-                  chc R' l r =sem= r.
+(** Choice simplification rule for right label. *)
+Theorem chc_f_r : forall (l r : cc),
+                  chc (litT R) l r =e= r.
 Proof.
-  (* Proof by unfolding [fcc_equiv]. *)
+  (* Proof by unfolding [equive]. *)
   intros l r c.
   reflexivity.
 Restart.
-  (* Proof by deriving from [f_tag_l]. *)
-  assert (H : (~ R') =eval= L').
-    (* Proof of assertion [H]. *)
-    intro c.
-    reflexivity.
-  (* Proof of [f_tag_r]. *)
+  (* Proof by deriving from [chc_f_l]. *)
   intros l r.
   rewrite -> chc_trans.
-  rewrite -> chc_f_cong by apply H.
-  apply f_tag_l.
+  rewrite -> chc_cong_f by apply comp_r_l.
+  apply chc_f_l.
 Qed.
 
-(** Formula-Join rule. *)
-Theorem f_join : forall (f1 f2 : formula) (l r : fcc),
-                 chc f1 l (chc f2 l r) =sem= chc (f1 \/ f2) l r.
+(** Choice label join rule. *)
+Theorem chc_f_join : forall (f1 f2 : formula) (l r : cc),
+                     chc f1 l (chc f2 l r) =e= chc (f1 \/ f2) l r.
 Proof.
-  (* Proof by unfolding [fcc_equiv]. *)
+  (* Proof by unfolding [equive]. *)
   intros f1 f2 l r c.
   simpl.
-  destruct (eval f1 c);
+  destruct (semf f1 c);
     reflexivity.
 Qed.
 
-(** Formula-Meet rule. *)
-Theorem f_meet : forall (f1 f2 : formula) (l r : fcc),
-                 chc f1 (chc f2 l r) r =sem= chc (f1 /\ f2) l r.
+(** Choice label meet rule. *)
+Theorem chc_f_meet : forall (f1 f2 : formula) (l r : cc),
+                     chc f1 (chc f2 l r) r =e= chc (f1 /\ f2) l r.
 Proof.
-  (* Proof by unfolding [fcc_equiv]. *)
+  (* Proof by unfolding [equive]. *)
   intros f1 f2 l r c.
   simpl.
-  destruct (eval f1 c);
+  destruct (semf f1 c);
     reflexivity.
 Restart.
-  (* Proof by deriving from [f_join]. *)
-  assert (H : forall f f' : formula, (~ f \/ ~ f') =eval= ~ (f /\ f')).
-    (* Proof of assertion [H] which is one of De Morgan's laws. *)
-    intros f f' c.
-    simpl.
-    destruct (eval f c);
-      reflexivity.
-  (* Proof of [f_meet]. *)
+  (* Proof by deriving from [chc_f_join]. *)
   intros f1 f2 l r.
-  rewrite -> chc_l_cong with (l' := chc (~ f2) r l) by apply chc_trans.
+  rewrite -> chc_cong_l with (l' := chc (~ f2) r l) by apply chc_trans.
   rewrite -> chc_trans.
-  rewrite -> f_join.
-  rewrite -> chc_f_cong with (f' := ~ (f1 /\ f2)) by apply H.
+  rewrite -> chc_f_join.
+  rewrite -> chc_cong_f with (f' := ~ (f1 /\ f2)).
   rewrite <- chc_trans.
   reflexivity.
+  symmetry.
+  apply comp_meet.
 Qed.
 
-(** Formula-Join-Not rule. *)
-Theorem f_join_not : forall (f1 f2 : formula) (l r : fcc),
-                     chc f1 l (chc f2 r l) =sem= chc (f1 \/ ~ f2) l r.
+(** Choice label join complement rule. *)
+Theorem chc_f_join_comp : forall (f1 f2 : formula) (l r : cc),
+                          chc f1 l (chc f2 r l) =e= chc (f1 \/ ~ f2) l r.
 Proof.
-  (* Proof by unfolding [fcc_equiv]. *)
+  (* Proof by unfolding [equive]. *)
   intros f1 f2 l r c.
   simpl.
-  destruct (eval f1 c);
+  destruct (semf f1 c);
     simpl;
     try rewrite -> negb_if;
     reflexivity.
 Restart.
-  (* Proof by deriving from [f_join]. *)
+  (* Proof by deriving from [chc_f_join]. *)
   intros f1 f2 l r.
-  rewrite -> chc_r_cong with (r' := chc (~ f2) l r) by apply chc_trans.
-  rewrite -> f_join.
+  rewrite -> chc_cong_r with (r' := chc (~ f2) l r) by apply chc_trans.
+  rewrite -> chc_f_join.
   reflexivity.
 Qed.
 
-(** Formula-Meet-Not rule. *)
-Theorem f_meet_not : forall (f1 f2 : formula) (l r : fcc),
-                     chc f1 (chc f2 r l) r =sem= chc (f1 /\ ~ f2) l r.
+(** Choice label meet complement rule. *)
+Theorem chc_f_meet_comp : forall (f1 f2 : formula) (l r : cc),
+                          chc f1 (chc f2 r l) r =e= chc (f1 /\ ~ f2) l r.
 Proof.
-  (* Proof by unfolding [fcc_equiv]. *)
+  (* Proof by unfolding [equive]. *)
   intros f1 f2 l r c.
   simpl.
-  destruct (eval f1 c);
+  destruct (semf f1 c);
     simpl;
     try rewrite -> negb_if;
     reflexivity.
 Restart.
-  (* Proof by deriving from [f_meet]. *)
+  (* Proof by deriving from [chc_f_meet]. *)
   intros f1 f2 l r.
-  rewrite -> chc_l_cong with (l' := chc (~ f2) l r) by apply chc_trans.
-  rewrite -> f_meet.
+  rewrite -> chc_cong_l with (l' := chc (~ f2) l r) by apply chc_trans.
+  rewrite -> chc_f_meet.
   reflexivity.
 Qed.
 
-(** Choice Idempotence rule. *)
-Theorem chc_idemp : forall (f : formula) (e : fcc),
-                    chc f e e =sem= e.
+(** Choice idempotence rule. *)
+Theorem chc_idemp : forall (f : formula) (e : cc),
+                    chc f e e =e= e.
 Proof.
-  (* Proof by unfolding [fcc_equiv]. *)
+  (* Proof by unfolding [equive]. *)
   intros f e c.
   simpl.
-  destruct (eval f c);
+  destruct (semf f c);
     reflexivity.
 Qed.
 
 (* TODO: choice domination rule? *)
 
 (** C-C-Merge rule. *)
-Theorem cc_merge : forall (f : formula) (l r e e' : fcc),
-                   chc f (chc f l e) (chc f e' r) =sem= chc f l r.
+Theorem cc_merge : forall (f : formula) (l r e e' : cc),
+                   chc f (chc f l e) (chc f e' r) =e= chc f l r.
 Proof.
-  (* Proof by unfolding [fcc_equiv]. *)
+  (* Proof by unfolding [equive]. *)
   intros f l r e e' c.
   simpl.
-  destruct (eval f c);
+  destruct (semf f c);
     reflexivity.
 Qed.
 
 (** C-C-Merge rule for the case where the nested choice appears in the left
     alternative. *)
-Theorem cc_merge_l : forall (f : formula) (l r e : fcc),
-                     chc f (chc f l e) r =sem= chc f l r.
+Theorem cc_merge_l : forall (f : formula) (l r e : cc),
+                     chc f (chc f l e) r =e= chc f l r.
 Proof.
-  (* Proof by unfolding [fcc_equiv]. *)
+  (* Proof by unfolding [equive]. *)
   intros f l r e c.
   simpl.
-  destruct (eval f c);
+  destruct (semf f c);
     reflexivity.
 Restart.
   (* Proof by deriving from [cc_merge]. *)
   intros f l r e.
-  rewrite <- chc_r_cong with (r := chc f r r) by apply chc_idemp.
+  rewrite <- chc_cong_r with (r := chc f r r) by apply chc_idemp.
   rewrite -> cc_merge.
   reflexivity.
 Qed.
 
 (** C-C-Merge rule for the case where the nested choice appears in the right
     alternative. *)
-Theorem cc_merge_r : forall (f : formula) (l r e : fcc), 
-                     chc f l (chc f e r) =sem= chc f l r.
+Theorem cc_merge_r : forall (f : formula) (l r e : cc), 
+                     chc f l (chc f e r) =e= chc f l r.
 Proof.
   (* Proof by deriving from [cc_merge_l]. *)
   intros f l r e.
-  rewrite -> chc_r_cong with (r' := chc (~ f) r e) by apply chc_trans.
+  rewrite -> chc_cong_r with (r' := chc (~ f) r e) by apply chc_trans.
   rewrite -> chc_trans.
   rewrite -> cc_merge_l.
   rewrite <- chc_trans.
@@ -371,79 +294,79 @@ Proof.
 Qed.
 
 (** C-C-Swap rule. *)
-Theorem cc_swap : forall (f1 f2 : formula) (e1 e2 e3 e4 : fcc),
-                  chc f1 (chc f2 e1 e2) (chc f2 e3 e4) =sem=
+Theorem cc_swap : forall (f1 f2 : formula) (e1 e2 e3 e4 : cc),
+                  chc f1 (chc f2 e1 e2) (chc f2 e3 e4) =e=
                   chc f2 (chc f1 e1 e3) (chc f1 e2 e4).
 Proof.
-  (* Proof by unfolding [fcc_equiv]. *)
+  (* Proof by unfolding [equive]. *)
   intros f1 f2 e1 e2 e3 e4 c.
   simpl.
-  destruct (eval f1 c);
+  destruct (semf f1 c);
     reflexivity.
 Qed.
 
 (** C-C-Swap rule for the case where the nested choice appears in the left
     alternative of the simpler form. *)
-Theorem cc_swap_l : forall (f f' : formula) (l r r' : fcc),
-                    chc f' (chc f l r') (chc f r r') =sem=
+Theorem cc_swap_l : forall (f f' : formula) (l r r' : cc),
+                    chc f' (chc f l r') (chc f r r') =e=
                     chc f (chc f' l r) r'.
 Proof.
-  (* Proof by unfolding [fcc_equiv]. *)
+  (* Proof by unfolding [equive]. *)
   intros f f' l r r' c.
   simpl.
-  destruct (eval f' c);
+  destruct (semf f' c);
     reflexivity.
 Restart.
   (* Proof by deriving from [cc_swap]. *)
   intros f f' l r r'.
   rewrite -> cc_swap.
-  rewrite -> chc_r_cong by apply chc_idemp.
+  rewrite -> chc_cong_r by apply chc_idemp.
   reflexivity.
 Qed.
 
 (** C-C-Swap rule for the case where the nested choice appears in the right
     alternative of the simpler form. *)
-Theorem cc_swap_r : forall (f f' : formula) (l l' r : fcc),
-                    chc f' (chc f l l') (chc f l r) =sem=
+Theorem cc_swap_r : forall (f f' : formula) (l l' r : cc),
+                    chc f' (chc f l l') (chc f l r) =e=
                     chc f l (chc f' l' r).
 Proof.
   (* Proof by deriving from [cc_swap_l]. *)
   intros f f' l l' r.
-  rewrite -> chc_l_cong with (l' := chc (~ f) l' l) by apply chc_trans.
-  rewrite -> chc_r_cong with (r' := chc (~ f) r l) by apply chc_trans.
+  rewrite -> chc_cong_l with (l' := chc (~ f) l' l) by apply chc_trans.
+  rewrite -> chc_cong_r with (r' := chc (~ f) r l) by apply chc_trans.
   rewrite -> cc_swap_l.
   rewrite <- chc_trans.
   reflexivity.
 Qed.
 
 (** AST-Factoring rule. *)
-Theorem ast_factor : forall (n : nat) (f : formula) (l l' r r' : fcc),
-                     chc f (node' n l r) (node' n l' r') =sem=
-                     node' n (chc f l l') (chc f r r').
+Theorem ast_factor : forall (f : formula) (l l' r r' : cc),
+                     chc f (tree' tt l r) (tree' tt l' r') =e=
+                     tree' tt (chc f l l') (chc f r r').
 Proof.
-  intros n f l l' r r' c.
+  intros f l l' r r' c.
   simpl.
-  destruct (eval f c);
+  destruct (semf f c);
     reflexivity.
 Qed.
 
 (** AST-L-Congruence rule. *)
-Theorem ast_l_cong : forall (n : nat) (l l' r : fcc),
-                     l =sem= l' ->
-                     node' n l r =sem= node' n l' r.
+Theorem ast_l_cong : forall l l' r : cc,
+                     l =e= l' ->
+                     tree' tt l r =e= tree' tt l' r.
 Proof.
-  intros n l l' r H c.
+  intros l l' r H c.
   simpl.
   rewrite -> H.
   reflexivity.
 Qed.
 
 (** AST-R-Congruence rule. *)
-Theorem ast_r_cong : forall (n : nat) (l r r' : fcc),
-                     r =sem= r' ->
-                     node' n l r =sem= node' n l r'.
+Theorem ast_r_cong : forall l r r' : cc,
+                     r =e= r' ->
+                     tree' tt l r =e= tree' tt l r'.
 Proof.
-  intros n l r r' H c.
+  intros l r r' H c.
   simpl.
   rewrite -> H.
   reflexivity.
@@ -454,24 +377,16 @@ Qed.
 Module Examples.
 
 (** Flip operation. *)
-Fixpoint flip (e : fcc) : fcc :=
+Fixpoint flip (e : cc) : cc :=
   match e with
   | chc f l r => chc (~ f) (flip r) (flip l)
   | _         => e
   end.
 
 (** The flip operation is an involution. *)
-Example flip_invo : forall e : fcc,
-                    flip (flip e) =sem= e.
+Example flip_invo : forall e : cc,
+                    flip (flip e) =e= e.
 Proof.
-  assert (H : forall f : formula, (~ ~ f) =eval= f).
-    (* Proof of assertion [H] which states that complement is an involution. *)
-    intros f c.
-    simpl.
-    rewrite -> negb_involutive.
-    reflexivity.
-  (* Proof of [flip_invo]. *)
-  intros e.
   induction e as [n | n l IHl r IHr | f l IHl r IHr].
   (* Case: [e = leaf' n]. *)
     reflexivity.
@@ -479,9 +394,9 @@ Proof.
     reflexivity.
   (* Case: [e = chc f l r]. *)
     simpl.
-    rewrite -> chc_f_cong by apply H.
-    rewrite -> chc_l_cong by apply IHl.
-    rewrite -> chc_r_cong by apply IHr.
+    rewrite -> chc_cong_f by apply comp_invo.
+    rewrite -> chc_cong_l by apply IHl.
+    rewrite -> chc_cong_r by apply IHr.
     reflexivity.
 Qed.
 
