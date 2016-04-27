@@ -55,6 +55,10 @@ Definition equivf : relation formula :=
 
 Infix "=f=" := equivf (at level 70) : type_scope.
 
+SearchAbout negb.
+SearchAbout orb.
+SearchAbout andb.
+
 (** Formula equivalence is reflexive. *)
 Remark equivf_refl : Reflexive equivf.
 Proof.
@@ -200,7 +204,7 @@ Proof.
 Qed.
 
 (** Join distributes over meet. *)
-Theorem join_meet_distrib_r : forall x y z : formula,
+Theorem join_meet_dist_r : forall x y z : formula,
                               (x \/ y /\ z) =f= ((x \/ y) /\ (x \/ z)).
 Proof.
   intros x y z c.
@@ -208,7 +212,7 @@ Proof.
 Qed.
 
 (** Meet distributes over join. *)
-Theorem meet_join_distrib_r : forall x y z : formula,
+Theorem meet_join_dist_r : forall x y z : formula,
                               (x /\ (y \/ z)) =f= (x /\ y \/ x /\ z).
 Proof.
   intros x y z c.
@@ -220,16 +224,15 @@ Theorem join_id_l : forall f : formula,
                     (litT R \/ f) =f= f.
 Proof.
   intros f c.
-  reflexivity.
+  apply orb_false_l.
 Qed.
 
 (** Right is a right identity for join. *)
 Corollary join_id_r : forall f : formula,
                       (f \/ litT R) =f= f.
 Proof.
-  intro f.
-  rewrite -> join_comm.
-  apply join_id_l.
+  intros f c.
+  apply orb_false_r.
 Qed.
 
 (** Left is a left identity for meet. *)
@@ -237,16 +240,15 @@ Theorem meet_id_l : forall f : formula,
                     (litT L /\ f) =f= f.
 Proof.
   intros f c.
-  reflexivity.
+  apply andb_true_l.
 Qed.
 
 (** Left is a right identity for meet. *)
 Corollary meet_id_r : forall f : formula,
                       (f /\ litT L) =f= f.
 Proof.
-  intro f.
-  rewrite -> meet_comm.
-  apply meet_id_l.
+  intros f c.
+  apply andb_true_r.
 Qed.
 
 (** Left is a left annihilator for join. *)
@@ -254,16 +256,15 @@ Theorem join_ann_l : forall f : formula,
                      (litT L \/ f) =f= litT L.
 Proof.
   intros f c.
-  reflexivity.
+  apply orb_true_l.
 Qed.
 
 (** Left is a right annihilator for join. *)
 Corollary join_ann_r : forall f : formula,
                        (f \/ litT L) =f= litT L.
 Proof.
-  intro f.
-  rewrite -> join_comm.
-  apply join_ann_l.
+  intros f c.
+  apply orb_true_r.
 Qed.
 
 (** Right is a left annihilator for meet. *)
@@ -271,16 +272,15 @@ Theorem meet_ann_l : forall f : formula,
                      (litT R /\ f) =f= litT R.
 Proof.
   intros f c.
-  reflexivity.
+  apply andb_false_l.
 Qed.
 
 (** Right is a right annihilator for meet. *)
 Corollary meet_ann_r : forall f : formula,
                        (f /\ litT R) =f= litT R.
 Proof.
-  intro f.
-  rewrite -> meet_comm.
-  apply meet_ann_l.
+  intros f c.
+  apply andb_false_r.
 Qed.
 
 (** Complementation for join. *)
@@ -334,18 +334,18 @@ Qed.
 (** Complement of left is right. *)
 Theorem comp_l_r : (~ litT L) =f= litT R.
 Proof.
-  rewrite <- meet_comp_r with (f := litT R).
-  apply meet_ann_l with (f := ~ litT R).
+  intro c.
+  reflexivity.
 Qed.
 
 (** Complement of right is left. *)
 Theorem comp_r_l : (~ litT R) =f= litT L.
 Proof.
-  rewrite <- join_comp_r with (f := litT L).
-  apply join_ann_l with (f := ~ litT L).
+  intro c.
+  reflexivity.
 Qed.
 
-(** Complement is an involution. Note that we could derive this. *)
+(** Complement is an involution. *)
 Theorem comp_invo : forall f : formula,
                     (~ ~ f) =f= f.
 Proof.
