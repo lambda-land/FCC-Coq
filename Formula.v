@@ -219,6 +219,54 @@ Proof.
   apply andb_orb_distrib_r.
 Qed.
 
+(** Join is idempotent. *)
+Theorem join_diag : forall f : formula,
+                    (f \/ f) =f= f.
+Proof.
+  intros f c.
+  apply orb_diag.
+Qed.
+
+(** Meet is idempotent. *)
+Theorem meet_diag : forall f : formula,
+                    (f /\ f) =f= f.
+Proof.
+  intros f c.
+  apply andb_diag.
+Qed.
+
+(** De Morgan's law for join. *)
+Theorem comp_join : forall x y : formula,
+                    (~ (x \/ y)) =f= (~ x /\ ~ y).
+Proof.
+  intros x y c.
+  apply negb_orb.
+Qed.
+
+(** De Morgan's law for meet. *)
+Theorem comp_meet : forall x y : formula,
+                    (~ (x /\ y)) =f= (~ x \/ ~ y).
+Proof.
+  intros x y c.
+  apply negb_andb.
+Qed.
+
+(** Complementation for join. *)
+Theorem join_comp_r : forall f : formula,
+                     (f \/ ~ f) =f= litT L.
+Proof.
+  intros f c.
+  apply orb_negb_r.
+Qed.
+
+(** Complementation for meet. *)
+Theorem meet_comp_r : forall f : formula,
+                     (f /\ ~ f) =f= litT R.
+Proof.
+  intros f c.
+  apply andb_negb_r.
+Qed.
+
 (** Right is a left identity for join. *)
 Theorem join_id_l : forall f : formula,
                     (litT R \/ f) =f= f.
@@ -281,54 +329,6 @@ Corollary meet_ann_r : forall f : formula,
 Proof.
   intros f c.
   apply andb_false_r.
-Qed.
-
-(** Complementation for join. *)
-Theorem join_comp_r : forall f : formula,
-                     (f \/ ~ f) =f= litT L.
-Proof.
-  intros f c.
-  apply orb_negb_r.
-Qed.
-
-(** Complementation for meet. *)
-Theorem meet_comp_r : forall f : formula,
-                     (f /\ ~ f) =f= litT R.
-Proof.
-  intros f c.
-  apply andb_negb_r.
-Qed.
-
-(** Absorption for join. *)
-Theorem join_diag : forall f : formula,
-                    (f \/ f) =f= f.
-Proof.
-  intros f c.
-  apply orb_diag.
-Qed.
-
-(** Absorption for meet. *)
-Theorem meet_diag : forall f : formula,
-                    (f /\ f) =f= f.
-Proof.
-  intros f c.
-  apply andb_diag.
-Qed.
-
-(** De Morgan's law for join. *)
-Theorem comp_join : forall x y : formula,
-                    (~ (x \/ y)) =f= (~ x /\ ~ y).
-Proof.
-  intros x y c.
-  apply negb_orb.
-Qed.
-
-(** De Morgan's law for meet. *)
-Theorem comp_meet : forall x y : formula,
-                    (~ (x /\ y)) =f= (~ x \/ ~ y).
-Proof.
-  intros x y c.
-  apply negb_andb.
 Qed.
 
 (** Complement of left is right. *)
