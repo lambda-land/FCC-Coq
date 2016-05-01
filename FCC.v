@@ -33,11 +33,11 @@ Inductive cc : Type :=
     configuration to binary trees. *)
 
 (** Expression semantics. *)
-Fixpoint seme (e : cc) (c : config) : obj :=
+Fixpoint semE (e : cc) (c : config) : obj :=
   match e with
   | empty'      => empty
-  | tree' x l r => tree x (seme l c) (seme r c)
-  | chc f l r   => if semf f c then seme l c else seme r c
+  | tree' x l r => tree x (semE l c) (semE r c)
+  | chc f l r   => if semF f c then semE l c else semE r c
   end.
 
 (** ** Semantic Equivalence Rules *)
@@ -45,20 +45,20 @@ Fixpoint seme (e : cc) (c : config) : obj :=
     thesis. Multiple proofs are given when it is instructive. *)
 
 (** Semantic equivalence for expressions. *)
-Definition equive : relation cc :=
-  fun e e' => forall c, (seme e c) = (seme e' c).
+Definition equivE : relation cc :=
+  fun e e' => forall c, (semE e c) = (semE e' c).
 
-Infix "=e=" := equive (at level 70) : type_scope.
+Infix "=e=" := equivE (at level 70) : type_scope.
 
 (** Expression equivalence is reflexive. *)
-Remark equive_refl : Reflexive equive.
+Remark equivE_refl : Reflexive equivE.
 Proof.
   intros x c.
   reflexivity.
 Qed.
 
 (** Expression equivalence is symmetric. *)
-Remark equive_sym : Symmetric equive.
+Remark equivE_sym : Symmetric equivE.
 Proof.
   intros x y H c.
   symmetry.
@@ -66,21 +66,21 @@ Proof.
 Qed.
 
 (** Expression equivalence is transitive. *)
-Remark equive_trans : Transitive equive.
+Remark equivE_trans : Transitive equivE.
 Proof.
   intros x y z H1 H2 c.
-  transitivity (seme y c).
+  transitivity (semE y c).
     apply H1.
     apply H2.
 Qed.
 
 (** Expression equivalence is an equivalence relation. *)
-Instance eqe : Equivalence equive.
+Instance eqE : Equivalence equivE.
 Proof.
   split.
-    apply equive_refl.
-    apply equive_sym.
-    apply equive_trans.
+    apply equivE_refl.
+    apply equivE_sym.
+    apply equivE_trans.
 Qed.
 
 (* TODO: make choice congruence rules instances of [Proper] typeclass. *)
@@ -89,10 +89,10 @@ Qed.
 Theorem chc_trans : forall (f : formula) (l r : cc),
                     chc f l r =e= chc (~ f) r l.
 Proof.
-  (* Proof by unfolding [equive]. *)
+  (* Proof by unfolding [equivE]. *)
   intros f l r c.
   simpl.
-  destruct (semf f c);
+  destruct (semF f c);
     reflexivity.
 Qed.
 
@@ -101,7 +101,7 @@ Theorem chc_cong_f : forall (f f' : formula) (l r : cc),
                      f =f= f' ->
                      chc f l r =e= chc f' l r.
 Proof.
-  (* Proof by unfolding [equive]. *)
+  (* Proof by unfolding [equivE]. *)
   intros f f' l r H c.
   simpl.
   rewrite -> H.
@@ -113,7 +113,7 @@ Theorem chc_cong_l : forall (f : formula) (l l' r : cc),
                      l =e= l' ->
                      chc f l r =e= chc f l' r.
 Proof.
-  (* Proof by unfolding [equive]. *)
+  (* Proof by unfolding [equivE]. *)
   intros f l l' r H c.
   simpl.
   rewrite -> H.
@@ -125,7 +125,7 @@ Theorem chc_cong_r : forall (f : formula) (l r r' : cc),
                      r =e= r' ->
                      chc f l r =e= chc f l r'.
 Proof.
-  (* Proof by unfolding [equive]. *)
+  (* Proof by unfolding [equivE]. *)
   intros f l r r' H c.
   simpl.
   rewrite -> H.
@@ -143,7 +143,7 @@ Qed.
 Theorem chc_f_l : forall (l r : cc),
                   chc (litT L) l r =e= l.
 Proof.
-  (* Proof by unfolding [equive]. *)
+  (* Proof by unfolding [equivE]. *)
   intros l r c.
   reflexivity.
 Qed.
@@ -152,7 +152,7 @@ Qed.
 Theorem chc_f_r : forall (l r : cc),
                   chc (litT R) l r =e= r.
 Proof.
-  (* Proof by unfolding [equive]. *)
+  (* Proof by unfolding [equivE]. *)
   intros l r c.
   reflexivity.
 Restart.
@@ -167,10 +167,10 @@ Qed.
 Theorem chc_f_join : forall (f1 f2 : formula) (l r : cc),
                      chc f1 l (chc f2 l r) =e= chc (f1 \/ f2) l r.
 Proof.
-  (* Proof by unfolding [equive]. *)
+  (* Proof by unfolding [equivE]. *)
   intros f1 f2 l r c.
   simpl.
-  destruct (semf f1 c);
+  destruct (semF f1 c);
     reflexivity.
 Qed.
 
@@ -178,10 +178,10 @@ Qed.
 Theorem chc_f_meet : forall (f1 f2 : formula) (l r : cc),
                      chc f1 (chc f2 l r) r =e= chc (f1 /\ f2) l r.
 Proof.
-  (* Proof by unfolding [equive]. *)
+  (* Proof by unfolding [equivE]. *)
   intros f1 f2 l r c.
   simpl.
-  destruct (semf f1 c);
+  destruct (semF f1 c);
     reflexivity.
 Restart.
   (* Proof by deriving from [chc_f_join]. *)
@@ -200,10 +200,10 @@ Qed.
 Theorem chc_f_join_comp : forall (f1 f2 : formula) (l r : cc),
                           chc f1 l (chc f2 r l) =e= chc (f1 \/ ~ f2) l r.
 Proof.
-  (* Proof by unfolding [equive]. *)
+  (* Proof by unfolding [equivE]. *)
   intros f1 f2 l r c.
   simpl.
-  destruct (semf f1 c);
+  destruct (semF f1 c);
     simpl;
     try rewrite -> negb_if;
     reflexivity.
@@ -219,10 +219,10 @@ Qed.
 Theorem chc_f_meet_comp : forall (f1 f2 : formula) (l r : cc),
                           chc f1 (chc f2 r l) r =e= chc (f1 /\ ~ f2) l r.
 Proof.
-  (* Proof by unfolding [equive]. *)
+  (* Proof by unfolding [equivE]. *)
   intros f1 f2 l r c.
   simpl.
-  destruct (semf f1 c);
+  destruct (semF f1 c);
     simpl;
     try rewrite -> negb_if;
     reflexivity.
@@ -238,10 +238,10 @@ Qed.
 Theorem chc_idemp : forall (f : formula) (e : cc),
                     chc f e e =e= e.
 Proof.
-  (* Proof by unfolding [equive]. *)
+  (* Proof by unfolding [equivE]. *)
   intros f e c.
   simpl.
-  destruct (semf f c);
+  destruct (semF f c);
     reflexivity.
 Qed.
 
@@ -251,10 +251,10 @@ Qed.
 Theorem cc_merge : forall (f : formula) (l r e e' : cc),
                    chc f (chc f l e) (chc f e' r) =e= chc f l r.
 Proof.
-  (* Proof by unfolding [equive]. *)
+  (* Proof by unfolding [equivE]. *)
   intros f l r e e' c.
   simpl.
-  destruct (semf f c);
+  destruct (semF f c);
     reflexivity.
 Qed.
 
@@ -263,10 +263,10 @@ Qed.
 Theorem cc_merge_l : forall (f : formula) (l r e : cc),
                      chc f (chc f l e) r =e= chc f l r.
 Proof.
-  (* Proof by unfolding [equive]. *)
+  (* Proof by unfolding [equivE]. *)
   intros f l r e c.
   simpl.
-  destruct (semf f c);
+  destruct (semF f c);
     reflexivity.
 Restart.
   (* Proof by deriving from [cc_merge]. *)
@@ -295,10 +295,10 @@ Theorem cc_swap : forall (f1 f2 : formula) (e1 e2 e3 e4 : cc),
                   chc f1 (chc f2 e1 e2) (chc f2 e3 e4) =e=
                   chc f2 (chc f1 e1 e3) (chc f1 e2 e4).
 Proof.
-  (* Proof by unfolding [equive]. *)
+  (* Proof by unfolding [equivE]. *)
   intros f1 f2 e1 e2 e3 e4 c.
   simpl.
-  destruct (semf f1 c);
+  destruct (semF f1 c);
     reflexivity.
 Qed.
 
@@ -308,10 +308,10 @@ Theorem cc_swap_l : forall (f f' : formula) (l r r' : cc),
                     chc f' (chc f l r') (chc f r r') =e=
                     chc f (chc f' l r) r'.
 Proof.
-  (* Proof by unfolding [equive]. *)
+  (* Proof by unfolding [equivE]. *)
   intros f f' l r r' c.
   simpl.
-  destruct (semf f' c);
+  destruct (semF f' c);
     reflexivity.
 Restart.
   (* Proof by deriving from [cc_swap]. *)
@@ -343,7 +343,7 @@ Theorem ast_factor : forall (f : formula) (l l' r r' : cc),
 Proof.
   intros f l l' r r' c.
   simpl.
-  destruct (semf f c);
+  destruct (semF f c);
     reflexivity.
 Qed.
 

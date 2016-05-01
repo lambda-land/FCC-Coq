@@ -36,13 +36,13 @@ Infix "/\" := meet (at level 80, right associativity).
 Definition config := dim -> tag.
 
 (** Formula semantics. *)
-Fixpoint semf (f : formula) (c : config) : tag :=
+Fixpoint semF (f : formula) (c : config) : tag :=
   match f with
   | litT t   => t
   | litD d   => c d
-  | ~ f      => negb (semf f c)
-  | f1 \/ f2 => (semf f1 c) || (semf f2 c)
-  | f1 /\ f2 => (semf f1 c) && (semf f2 c)
+  | ~ f      => negb (semF f c)
+  | f1 \/ f2 => (semF f1 c) || (semF f2 c)
+  | f1 /\ f2 => (semF f1 c) && (semF f2 c)
   end.
 
 (** ** Semantic Equivalence Rules *)
@@ -50,24 +50,24 @@ Fixpoint semf (f : formula) (c : config) : tag :=
     thesis. Multiple proofs are given when it is instructive. *)
 
 (** Semantic equivalence for formulas. *)
-Definition equivf : relation formula :=
-  fun f f' => forall c, (semf f c) = (semf f' c).
+Definition equivF : relation formula :=
+  fun f f' => forall c, (semF f c) = (semF f' c).
 
-Infix "=f=" := equivf (at level 70) : type_scope.
+Infix "=f=" := equivF (at level 70) : type_scope.
 
 SearchAbout negb.
 SearchAbout orb.
 SearchAbout andb.
 
 (** Formula equivalence is reflexive. *)
-Remark equivf_refl : Reflexive equivf.
+Remark equivF_refl : Reflexive equivF.
 Proof.
   intros x c.
   reflexivity.
 Qed.
 
 (** Formula equivalence is symmetric. *)
-Remark equivf_sym : Symmetric equivf.
+Remark equivF_sym : Symmetric equivF.
 Proof.
   intros x y H c.
   symmetry.
@@ -75,21 +75,21 @@ Proof.
 Qed.
 
 (** Formula equivalence is transitive. *)
-Remark equivf_trans : Transitive equivf.
+Remark equivF_trans : Transitive equivF.
 Proof.
   intros x y z H1 H2 c.
-  transitivity (semf y c).
+  transitivity (semF y c).
     apply H1.
     apply H2.
 Qed.
 
 (** Formula equivalence is an equivalence relation. *)
-Instance eqf : Equivalence equivf.
+Instance eqF : Equivalence equivF.
 Proof.
   split.
-    apply equivf_refl.
-    apply equivf_sym.
-    apply equivf_trans.
+    apply equivF_refl.
+    apply equivF_sym.
+    apply equivF_trans.
 Qed.
 
 (* TODO: make congruence rules for formula instances of [Proper] typeclass. *)
