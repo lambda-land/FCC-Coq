@@ -96,10 +96,32 @@ Proof.
     reflexivity.
 Qed.
 
+(** AST-L-Congruence rule. *)
+Remark ast_l_cong : forall l l' r : cc,
+                    l =e= l' ->
+                    tree' tt l r =e= tree' tt l' r.
+Proof.
+  intros l l' r H c.
+  simpl.
+  rewrite -> H.
+  reflexivity.
+Qed.
+
+(** AST-R-Congruence rule. *)
+Remark ast_r_cong : forall l r r' : cc,
+                    r =e= r' ->
+                    tree' tt l r =e= tree' tt l r'.
+Proof.
+  intros l r r' H c.
+  simpl.
+  rewrite -> H.
+  reflexivity.
+Qed.
+
 (** Choice congruence rule for labels. *)
-Theorem chc_cong_f : forall (f f' : formula) (l r : cc),
-                     f =f= f' ->
-                     chc f l r =e= chc f' l r.
+Remark chc_cong_f : forall (f f' : formula) (l r : cc),
+                    f =f= f' ->
+                    chc f l r =e= chc f' l r.
 Proof.
   (* Proof by unfolding [equivE]. *)
   intros f f' l r H c.
@@ -109,9 +131,9 @@ Proof.
 Qed.
 
 (** Choice congruence rule for left alternatives. *)
-Theorem chc_cong_l : forall (f : formula) (l l' r : cc),
-                     l =e= l' ->
-                     chc f l r =e= chc f l' r.
+Remark chc_cong_l : forall (f : formula) (l l' r : cc),
+                    l =e= l' ->
+                    chc f l r =e= chc f l' r.
 Proof.
   (* Proof by unfolding [equivE]. *)
   intros f l l' r H c.
@@ -121,9 +143,9 @@ Proof.
 Qed.
 
 (** Choice congruence rule for right alternatives. *)
-Theorem chc_cong_r : forall (f : formula) (l r r' : cc),
-                     r =e= r' ->
-                     chc f l r =e= chc f l r'.
+Remark chc_cong_r : forall (f : formula) (l r r' : cc),
+                    r =e= r' ->
+                    chc f l r =e= chc f l r'.
 Proof.
   (* Proof by unfolding [equivE]. *)
   intros f l r r' H c.
@@ -137,6 +159,17 @@ Restart.
   rewrite -> chc_cong_l by apply H.
   rewrite <- chc_trans.
   reflexivity.
+Qed.
+
+(** Choice idempotence rule. *)
+Theorem chc_idemp : forall (f : formula) (e : cc),
+                    chc f e e =e= e.
+Proof.
+  (* Proof by unfolding [equivE]. *)
+  intros f e c.
+  simpl.
+  destruct (semF f c);
+    reflexivity.
 Qed.
 
 (** Choice simplification rule for left label. *)
@@ -234,17 +267,6 @@ Restart.
   reflexivity.
 Qed.
 
-(** Choice idempotence rule. *)
-Theorem chc_idemp : forall (f : formula) (e : cc),
-                    chc f e e =e= e.
-Proof.
-  (* Proof by unfolding [equivE]. *)
-  intros f e c.
-  simpl.
-  destruct (semF f c);
-    reflexivity.
-Qed.
-
 (* TODO: choice domination rule? *)
 
 (** C-C-Merge rule. *)
@@ -290,6 +312,17 @@ Proof.
   reflexivity.
 Qed.
 
+(** AST-Factoring rule. *)
+Theorem ast_factor : forall (f : formula) (l l' r r' : cc),
+                     chc f (tree' tt l r) (tree' tt l' r') =e=
+                     tree' tt (chc f l l') (chc f r r').
+Proof.
+  intros f l l' r r' c.
+  simpl.
+  destruct (semF f c);
+    reflexivity.
+Qed.
+
 (** C-C-Swap rule. *)
 Theorem cc_swap : forall (f1 f2 : formula) (e1 e2 e3 e4 : cc),
                   chc f1 (chc f2 e1 e2) (chc f2 e3 e4) =e=
@@ -333,39 +366,6 @@ Proof.
   rewrite -> chc_cong_r with (r' := chc (~ f) r l) by apply chc_trans.
   rewrite -> cc_swap_l.
   rewrite <- chc_trans.
-  reflexivity.
-Qed.
-
-(** AST-Factoring rule. *)
-Theorem ast_factor : forall (f : formula) (l l' r r' : cc),
-                     chc f (tree' tt l r) (tree' tt l' r') =e=
-                     tree' tt (chc f l l') (chc f r r').
-Proof.
-  intros f l l' r r' c.
-  simpl.
-  destruct (semF f c);
-    reflexivity.
-Qed.
-
-(** AST-L-Congruence rule. *)
-Theorem ast_l_cong : forall l l' r : cc,
-                     l =e= l' ->
-                     tree' tt l r =e= tree' tt l' r.
-Proof.
-  intros l l' r H c.
-  simpl.
-  rewrite -> H.
-  reflexivity.
-Qed.
-
-(** AST-R-Congruence rule. *)
-Theorem ast_r_cong : forall l r r' : cc,
-                     r =e= r' ->
-                     tree' tt l r =e= tree' tt l r'.
-Proof.
-  intros l r r' H c.
-  simpl.
-  rewrite -> H.
   reflexivity.
 Qed.
 
