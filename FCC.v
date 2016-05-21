@@ -5,7 +5,6 @@ Require Import Relations.Relation_Definitions.
 Require Import Classes.Morphisms.
 Require Import Setoids.Setoid.
 
-(* TODO: import Formula correctly *)
 Load Formula.
 Import Formula.
 
@@ -30,7 +29,7 @@ Inductive cc : Type :=
 
 (** ** Semantics *)
 (** The semantics of a choice calculus expression is a function from
-    configuration to binary trees. *)
+    configurations to binary trees. *)
 
 (** Expression semantics. *)
 Fixpoint semE (e : cc) (c : config) : obj :=
