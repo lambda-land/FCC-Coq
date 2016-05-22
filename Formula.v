@@ -30,7 +30,7 @@ Infix "\/" := join (at level 85, right associativity).
 Infix "/\" := meet (at level 80, right associativity).
 
 (** ** Semantics *)
-(** The semantics of formulas is a function from configuration to tags. *)
+(** The semantics of a formula is a function from configurations to tags. *)
 
 (** Configurations. *)
 Definition config := dim -> tag.
@@ -92,7 +92,7 @@ Proof.
     apply equivF_trans.
 Qed.
 
-(* TODO: make congruence rules for formula instances of [Proper] typeclass. *)
+(* TODO: make formula congruence rules instance of [Proper] typeclass. *)
 
 (** Congruence rule for complement. *)
 Remark comp_cong : forall f f' : formula,

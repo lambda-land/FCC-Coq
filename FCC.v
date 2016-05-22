@@ -29,7 +29,7 @@ Inductive cc : Type :=
 
 (** ** Semantics *)
 (** The semantics of a choice calculus expression is a function from
-    configurations to binary trees. *)
+    configurations to terms in the object language, i.e., binary trees. *)
 
 (** Expression semantics. *)
 Fixpoint semE (e : cc) (c : config) : obj :=
@@ -82,7 +82,7 @@ Proof.
     apply equivE_trans.
 Qed.
 
-(* TODO: make choice congruence rules instances of [Proper] typeclass. *)
+(* TODO: make choice congruence rules instance of [Proper] typeclass. *)
 
 (** Choice transposition rule. *)
 Theorem chc_trans : forall (f : formula) (l r : cc),
@@ -369,7 +369,8 @@ Proof.
 Qed.
 
 (** ** Examples *)
-(** Examples of some additional properties of formula choice calculus. *)
+(** Examples of some additional properties and derivations by semantic
+    equivalence rules. *)
 Module Examples.
 
 (** Flip operation. *)
@@ -397,5 +398,7 @@ Proof.
 Qed.
 
 End Examples.
+
+(* TODO: prove completeness for a subset of semantic equivalence rules. *)
 
 End FCC.
