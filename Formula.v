@@ -55,10 +55,6 @@ Definition equivF : relation formula :=
 
 Infix "=f=" := equivF (at level 70) : type_scope.
 
-SearchAbout negb.
-SearchAbout orb.
-SearchAbout andb.
-
 (** Formula equivalence is reflexive. *)
 Remark equivF_refl : Reflexive equivF.
 Proof.
@@ -276,8 +272,8 @@ Proof.
 Qed.
 
 (** Right is a right identity for join. *)
-Corollary join_id_r : forall f : formula,
-                      (f \/ litT R) =f= f.
+Theorem join_id_r : forall f : formula,
+                    (f \/ litT R) =f= f.
 Proof.
   intros f c.
   apply orb_false_r.
@@ -292,8 +288,8 @@ Proof.
 Qed.
 
 (** Left is a right identity for meet. *)
-Corollary meet_id_r : forall f : formula,
-                      (f /\ litT L) =f= f.
+Theorem meet_id_r : forall f : formula,
+                    (f /\ litT L) =f= f.
 Proof.
   intros f c.
   apply andb_true_r.
@@ -308,8 +304,8 @@ Proof.
 Qed.
 
 (** Left is a right annihilator for join. *)
-Corollary join_ann_r : forall f : formula,
-                       (f \/ litT L) =f= litT L.
+Theorem join_ann_r : forall f : formula,
+                     (f \/ litT L) =f= litT L.
 Proof.
   intros f c.
   apply orb_true_r.
@@ -324,8 +320,8 @@ Proof.
 Qed.
 
 (** Right is a right annihilator for meet. *)
-Corollary meet_ann_r : forall f : formula,
-                       (f /\ litT R) =f= litT R.
+Theorem meet_ann_r : forall f : formula,
+                     (f /\ litT R) =f= litT R.
 Proof.
   intros f c.
   apply andb_false_r.
