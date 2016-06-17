@@ -40,7 +40,7 @@ Fixpoint semE (e : cc) (c : config) : obj :=
   end.
 
 (** ** Semantic Equivalence Rules *)
-(** Statement and proof of semantic equivalence rules for expressions from my
+(** Statement and proof of syntactic rules for expression equivalence from my
     thesis. Multiple proofs are given when it is instructive. *)
 
 (** Semantic equivalence for expressions. *)
@@ -399,6 +399,61 @@ Qed.
 
 End Examples.
 
-(* TODO: prove completeness for a subset of semantic equivalence rules. *)
+(** A subset of syntactic rules for expression equivalence. *)
+Inductive equivE' : cc -> cc -> Prop :=
+  (* equivalence rules *)
+  | equivE_refl'  : forall x : cc,
+                    equivE' x x
+  | equivE_sym'   : forall x y : cc,
+                    equivE' x y ->
+                    equivE' y x
+  | equivE_trans' : forall x y z : cc,
+                    equivE' x y -> equivE' y z ->
+                    equivE' x z
+  (* congruence rules *)
+  | ast_cong      : forall l l' r r' : cc,
+                    equivE' l l' -> equivE' r r' ->
+                    equivE' (tree' tt l r) (tree' tt l' r')
+  | chc_cong      : forall (f f' : formula) (l l' r r' : cc),
+                    f =f= f' -> equivE' l l' -> equivE' r r' ->
+                    equivE' (chc f l r) (chc f' l' r')
+  (* choice transposition rule *)
+  | chc_trans'    : forall (f : formula) (l r : cc),
+                    equivE' (chc f l r) (chc (~ f) r l)
+  (* choice simplification rules *)
+  | chc_idemp'    : forall (f : formula) (e : cc),
+                    equivE' (chc f e e) e
+  | chc_f_l'      : forall (l r : cc),
+                    equivE' (chc (litT L) l r) l
+  (* formula choice rule *)
+  | chc_f_join'   : forall (f1 f2 : formula) (l r : cc),
+                    equivE' (chc f1 l (chc f2 l r))
+                            (chc (f1 \/ f2) l r)
+  (* choice merge rule *)
+  | cc_merge'     : forall (f : formula) (l r e e' : cc),
+                    equivE' (chc f (chc f l e) (chc f e' r))
+                            (chc f l r)
+  (* object and choice commutation rules *)
+  | ast_factor'   : forall (f : formula) (l l' r r' : cc),
+                    equivE' (chc f (tree' tt l r) (tree' tt l' r'))
+                            (tree' tt (chc f l l') (chc f r r'))
+  | cc_swap'      : forall (f1 f2 : formula) (e1 e2 e3 e4 : cc),
+                    equivE' (chc f1 (chc f2 e1 e2) (chc f2 e3 e4))
+                            (chc f2 (chc f1 e1 e3) (chc f1 e2 e4)).
+
+(** The subset of syntactic rules is complete. *)
+Theorem equivE_complete : forall e e' : cc,
+                          e =e= e' -> equivE' e e'.
+Proof.
+  intros e e' H.
+  destruct e as [| tt l r | f l r]; destruct e' as [| tt' l' r' | f' l' r'].
+  (* Case: [e = empty'] and [e' = empty']. *)
+    apply equivE_refl'.
+  (* Case: [e = empty'] and [e' = tree' tt' l' r']. *)
+  (* Case: [e = empty'] and [e' = chc f' l' r']. *)
+  (* Case: [e = tree' tt l r] and [e' = tree' tt' l' r']. *)
+  (* Case: [e = tree' tt l r] and [e' = chc f' l' r']. *)
+  (* Case: [e = chc f l r] and [e' = chc f' l' r']. *)
+Admitted. (* TODO: prove completeness for subset of rules. *)
 
 End FCC.
